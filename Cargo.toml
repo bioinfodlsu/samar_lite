@@ -1,0 +1,15 @@
+[package]
+name = "project"
+version = "0.1.0"
+authors = ["kylesantiago <32703211+kylesantiago@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bio = "*"
+succinct = "0.5.2"
+bv = "*"
+byteorder = "1.4.2"
+suffix_array = "0.5.0"
+protein-translate = "0.2.0"
