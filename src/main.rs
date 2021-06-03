@@ -1,17 +1,19 @@
 use std::time::Instant;
 use std::path::Path;
-use bio::io::fasta;
+use bio::io::{fasta,fastq};
 use bio::data_structures::suffix_array::{lcp,suffix_array};
 use std::str;
-use succinct::rank::Rank9;
 use bio::data_structures::rank_select::RankSelect;
 use bv::BitVec;
 use std::collections::{HashMap,HashSet};
-mod translate;
 use std::fs;
+use bio::alphabets::rna::revcomp;
+use protein_translate::translate;
+use std::collections::LinkedList;
+use std::process::{Command,Stdio};
 
 fn main() {
-	let path_r = Path::new("data/reference/ref.fasta");
+	let path_r = Path::new("data/ref.fasta");
     let mut reader = fasta::Reader::from_file(path_r).expect("File not found");
 
 	let mut nb_reads = 0;
@@ -26,7 +28,10 @@ fn main() {
 	let mut counts: HashMap<String,u64> = HashMap::new();
 	
 	let mut ref_names: HashMap<u64,String> = HashMap::new();
+	let mut read_alignments: HashMap<String,u64> = HashMap::new();
 	
+
+
 	let start = Instant::now();
 	
 	//For Reference
@@ -64,126 +69,68 @@ fn main() {
 	println!("Rank of element 1300 {:?}",rs_maybe.rank(suff_arry[126]as u64));
 	println!("Rank of element 1300 {:?}",rs_maybe.rank(suff_arry[127]as u64));
 	*/
-	
-	//For Query
-	
-	let paths = fs::read_dir("data/query").unwrap();
-	
-	for path in paths {
-		translate::p_trans(&path.unwrap().path());
-    }
-	
-	let paths = fs::read_dir("translated").unwrap();
-	
-	let mut read_count = 0;
-	
-	for path in paths {
-		//println!("Name: {}", path.unwrap().path().display());
-		//let path_q = Path::new("query_test.fasta");
-		reader = fasta::Reader::from_file(path.unwrap().path()).expect("File not found");
-		
-		let kmer = 5;
-		
-		for result in reader.records() {
-			read_count+= 1;
-			let record = result.expect("Error during fasta record parsing");
-			let read = str::from_utf8(record.seq()).expect("Error during fasta record parsing");
-			//println!("{}: {}",record.id(),read);
-			let mut consensus: Vec<HashSet<u64>> = Vec::new();
-			let mut mode_consensus: Vec<u64> = Vec::new();
-			let mut cov_consensus: HashMap<u64,u64> = HashMap::new(); 
-			
-			let mut x = 0;
-			let seqlen = record.seq().len();
-			while x < (seqlen-kmer+1){
-				let read_k = &read[x..(x+kmer)];
-				//println!("{}",read_k);
-				// Go through suffix array and find a beg and end interval
-				let (beg,end) = b_search(cat_str.as_bytes(), &suff_arry, read_k.as_bytes());
 
-				let mut mmp = 0;
-				if beg <= end {
-					//println!("Interval found: {}",read_k);
-					//If an interval is found begin MMP
-					let mut beg_p = beg;
-					let mut end_p = end;
-					
-					//finding MMP
-					//println!("SA index Match: Beg: {} & End: {}",beg,end);
-					let mut done = false; 
-					while !done{
-						if (x+kmer+mmp+1) < read.len() {
-							let temp_read = &read[x..(x+kmer+mmp+1)];
-							let (temp_beg,temp_end) = b_search_mmp(cat_str.as_bytes(), &suff_arry, temp_read.as_bytes(),beg_p,end_p + 1);
-							
-							
-							if temp_beg <= temp_end{
-								beg_p = temp_beg;
-								end_p = temp_end;
-								mmp+=1;
-							}
-							else{
-								done = true;
-							}
-						}
-						else{
-							done = true;
-						}
-					}
-					//println!("MMP: {}",mmp);
-					//println!("Beg prime: {} & End prime: {}", beg_p,end_p);
-					let mut ref_set: HashSet<u64> = HashSet::new();
-					for x in beg_p..(end_p+1){
-						ref_set.insert(rs_maybe.rank(suff_arry[x] as u64).unwrap());
-						mode_consensus.push(rs_maybe.rank(suff_arry[x] as u64).unwrap());
-						*cov_consensus.entry(rs_maybe.rank(suff_arry[x] as u64).unwrap()).or_insert(0)  += (kmer + mmp) as u64;
-					}
-					consensus.push(ref_set.clone());
-					//println!("{:?}",temp_cov);
-				}	
-				x += 1+mmp;
+	//For Query
+	let path_q = Path::new("data/read_1.fastq");
+    let reader_q =  fastq::Reader::from_file(path_q).expect("File not found");
+	//let paths = fs::read_dir(r"D:/data/reads_20mil_1txpg_protCoding.rep3/query").unwrap();
+	let mut records = reader_q.records();
+	
+    while let (Some(Ok(pair1)),Some(Ok(pair2))) = (records.next(),records.next()){
+		println!("HERE IS READ: {} {}", pair1.id(),pair2.id());
+
+		let p1_frame_con = vec![palign(cat_str.as_bytes(), &suff_arry, translate(pair1.seq()), &rs_maybe),
+								palign(cat_str.as_bytes(), &suff_arry, translate(&pair1.seq()[1..]), &rs_maybe),
+								palign(cat_str.as_bytes(), &suff_arry, translate(&pair1.seq()[2..]), &rs_maybe),
+								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair1.seq())), &rs_maybe),
+								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair1.seq())[1..]), &rs_maybe),
+								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair1.seq())[2..]), &rs_maybe)];
+		println!("{:?}",p1_frame_con);
+
+		let p2_frame_con = vec![palign(cat_str.as_bytes(), &suff_arry, translate(pair2.seq()), &rs_maybe),
+								palign(cat_str.as_bytes(), &suff_arry, translate(&pair2.seq()[1..]), &rs_maybe),
+								palign(cat_str.as_bytes(), &suff_arry, translate(&pair2.seq()[2..]), &rs_maybe),
+								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair2.seq())), &rs_maybe),
+								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair2.seq())[1..]), &rs_maybe),
+								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair2.seq())[2..]), &rs_maybe)];
+		//println!("{:?}",p2_frame_con);
+
+		let mut p1_best = 10;
+		let mut max1 = 0;
+
+		for (i,info) in p1_frame_con.iter().enumerate(){
+			if info.len() > max1{
+				max1 = info.len();
+				p1_best = i;
 			}
-			//Consesus machine 
-			//println!("{:?}",consensus);
-			if !consensus.is_empty() {
-				let (intersection, others) = consensus.split_at_mut(1);
-				let intersection = &mut intersection[0];
-				for other in others {
-					intersection.retain(|e| other.contains(e));
-				}
-				//println!("{:?}",intersection);
-				//Using Intersection
-				if !intersection.is_empty(){
-					*counts.entry(ref_names.get(intersection.iter().next().unwrap()).unwrap().to_string()).or_insert(0)  += 1;
-				}
-				// Using Coverage
-				else {
-					let mut transcript = 0;
-					let mut max = 0;
-					for (k, v) in cov_consensus.iter() {
-						if *v > max {
-							transcript = *k;
-							max = *v;
-						}
-					}
-					*counts.entry(ref_names.get(&transcript).unwrap().to_string()).or_insert(0)  += 1;
-				}
-				/* Using Mode
-				else {
-					*counts.entry(ref_names.get(&mode(&mode_consensus)).unwrap().to_string()).or_insert(0)  += 1;
-				}
-				*/
+		}
+		if p1_best < 10{ 
+			println!("Best Frame Pair 1: {} {:?}",p1_best,p1_frame_con.get(p1_best).unwrap());
+		}
+		let mut p2_best = 10;
+		let mut max2 = 0;
+
+		for (i,info) in p2_frame_con.iter().enumerate(){
+			if info.len() > max2{
+				max2 = info.len();
+				p2_best = i;
 			}
-			//
+		}
+		if p2_best < 10{
+			println!("Best Frame Pair 2: {} {:?}",p2_best,p2_frame_con.get(p2_best).unwrap());
+		}
+
+		let mut alignment: Vec<u64> = Vec::new();
+
+		while let (Some(first),Some(second)) = (p1_frame_con.iter().next(),p2_frame_con.iter().next()){
 			
 		}
-    }
-	
-	
+	} 
+
+	//println!("{:?}", read_alignments);
 	let elapsed = start.elapsed();
 	println!("Millis: {} ms", elapsed.as_millis());
-	println!("Reads Aligned: {}",read_count);
-	println!("Counts HashMap: {:?}",counts);
+	println!("Reads Aligned: {}",counts.len());
 }
 
 fn mode(numbers: &[u64]) -> u64 {
@@ -213,7 +160,6 @@ fn b_search(s: &[u8], sa: &[usize], pat: &[u8]) -> (usize,usize) {
 	b_search_mmp(s,sa,pat,0,sa.len())
 }
 
-
 fn b_search_mmp(s: &[u8], sa: &[usize], pat: &[u8], beg: usize, end: usize) -> (usize,usize) {
 	let mut i = beg;
 	let mut k = end;
@@ -238,4 +184,92 @@ fn b_search_mmp(s: &[u8], sa: &[usize], pat: &[u8], beg: usize, end: usize) -> (
 	}
 
 	(i,j-1)
+}
+
+fn palign(cat_str: &[u8], suff_arry: &[usize], read:String, rs_maybe: &bio::data_structures::rank_select::RankSelect) -> Vec<(u64,f64)>{
+	let mut trans: Vec<(u64,f64)> = Vec::new();
+	let kmer = 5;
+	let mut cov_consensus: HashMap<u64,f64> = HashMap::new(); 
+	let threshold:f64 = 33.3;
+	
+	let mut x = 0;
+	let seqlen = read.len();
+	while x < (seqlen-kmer+1){
+		let read_k = &read[x..(x+kmer)];
+		//println!("{}",read_k);
+		// Go through suffix array and find a beg and end interval
+		let (beg,end) = b_search(cat_str, &suff_arry, read_k.as_bytes());
+
+		let mut mmp = 0;
+		if beg <= end {
+			//println!("Interval found: {}",read_k);
+			//If an interval is found begin MMP
+			let mut beg_p = beg;
+			let mut end_p = end;
+			
+			//finding MMP
+			//println!("SA index Match: Beg: {} & End: {}",beg,end);
+			let mut done = false; 
+			while !done{
+				if (x+kmer+mmp+1) < read.len() {
+					let temp_read = &read[x..(x+kmer+mmp+1)];
+					let (temp_beg,temp_end) = b_search_mmp(cat_str, &suff_arry, temp_read.as_bytes(),beg_p,end_p + 1);
+					
+					if temp_beg <= temp_end{
+						beg_p = temp_beg;
+						end_p = temp_end;
+						mmp+=1;
+					}
+					else{
+						done = true;
+					}
+				}
+				else{
+					done = true;
+				}
+			}
+			//println!("MMP: {}",mmp);
+			//println!("Beg prime: {} & End prime: {}", beg_p,end_p);
+			//println!("{} {} {}",seqlen, kmer, mmp);
+			for x in beg_p..(end_p+1){
+				//consensus.push(HashSet::new().insert(rs_maybe.rank(suff_arry[x] as u64).unwrap()));
+				//mode_consensus.push(rs_maybe.rank(suff_arry[x] as u64).unwrap());
+				*cov_consensus.entry(rs_maybe.rank(suff_arry[x] as u64).unwrap()).or_insert((kmer + mmp) as f64 / seqlen as f64 * 100.0) += 0.0 ;
+			}
+			
+		}	
+		x += 1+mmp;
+	}
+	//Consesus machine 
+	/*
+	if !consensus.is_empty() {
+		let (intersection, others) = consensus.split_at_mut(1);
+		let intersection = &mut intersection[0];
+		for other in others {
+			intersection.retain(|e| other.contains(e));
+		}
+		//println!("{:?}",intersection);
+		//Using Intersection
+		
+		if !intersection.is_empty(){
+			*counts.entry(ref_names.get(intersection.iter().next().unwrap()).unwrap().to_string()).or_insert(0)  += 1;
+		}
+	*/
+		// Using Coverage
+		//else {
+	if !cov_consensus.is_empty(){
+		for (transcript, coverage) in cov_consensus.iter() {
+			if *coverage > threshold {
+				trans.push((*transcript,*coverage));
+			}
+		}
+		//
+	}
+		//}
+		/* Using Mode
+		else {
+			*counts.entry(ref_names.get(&mode(&mode_consensus)).unwrap().to_string()).or_insert(0)  += 1;
+		}
+		*/
+	trans
 }
