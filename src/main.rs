@@ -78,7 +78,7 @@ fn main() {
 	
     while let (Some(Ok(pair1)),Some(Ok(pair2))) = (records.next(),records.next()){
 		println!("HERE IS READ: {} {}", pair1.id(),pair2.id());
-
+	
 		let p1_frame_con = vec![palign(cat_str.as_bytes(), &suff_arry, translate(pair1.seq()), &rs_maybe),
 								palign(cat_str.as_bytes(), &suff_arry, translate(&pair1.seq()[1..]), &rs_maybe),
 								palign(cat_str.as_bytes(), &suff_arry, translate(&pair1.seq()[2..]), &rs_maybe),
@@ -93,7 +93,7 @@ fn main() {
 								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair2.seq())), &rs_maybe),
 								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair2.seq())[1..]), &rs_maybe),
 								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair2.seq())[2..]), &rs_maybe)];
-		//println!("{:?}",p2_frame_con);
+		println!("{:?}",p2_frame_con);
 
 		let mut p1_best = 10;
 		let mut max1 = 0;
@@ -105,8 +105,9 @@ fn main() {
 			}
 		}
 		if p1_best < 10{ 
-			println!("Best Frame Pair 1: {} {:?}",p1_best,p1_frame_con.get(p1_best).unwrap());
+			println!("Best Frame Pair 1: {} {:?}",p1_best,p1_frame_con[p1_best]);
 		}
+		
 		let mut p2_best = 10;
 		let mut max2 = 0;
 
@@ -117,14 +118,15 @@ fn main() {
 			}
 		}
 		if p2_best < 10{
-			println!("Best Frame Pair 2: {} {:?}",p2_best,p2_frame_con.get(p2_best).unwrap());
+			println!("Best Frame Pair 2: {} {:?}",p2_best,p2_frame_con[p2_best]);
 		}
 
-		let mut alignment: Vec<u64> = Vec::new();
+		// look only at best frame
+		//let mut alignment: Vec<u64> = Vec::new();
 
-		while let (Some(first),Some(second)) = (p1_frame_con.iter().next(),p2_frame_con.iter().next()){
+		//while let (Some(first),Some(second)) = (p1_frame_con.iter().next(),p2_frame_con.iter().next()){
 			
-		}
+		//}
 	} 
 
 	//println!("{:?}", read_alignments);
@@ -187,7 +189,7 @@ fn b_search_mmp(s: &[u8], sa: &[usize], pat: &[u8], beg: usize, end: usize) -> (
 }
 
 fn palign(cat_str: &[u8], suff_arry: &[usize], read:String, rs_maybe: &bio::data_structures::rank_select::RankSelect) -> Vec<(u64,f64)>{
-	let mut trans: Vec<(u64,f64)> = Vec::new();
+	let mut palign_result: Vec<(u64,f64)> = Vec::new();
 	let kmer = 5;
 	let mut cov_consensus: HashMap<u64,f64> = HashMap::new(); 
 	let threshold:f64 = 33.3;
@@ -258,9 +260,9 @@ fn palign(cat_str: &[u8], suff_arry: &[usize], read:String, rs_maybe: &bio::data
 		// Using Coverage
 		//else {
 	if !cov_consensus.is_empty(){
-		for (transcript, coverage) in cov_consensus.iter() {
+		for (protein, coverage) in cov_consensus.iter() {
 			if *coverage > threshold {
-				trans.push((*transcript,*coverage));
+				palign_result.push((*protein,*coverage));
 			}
 		}
 		//
@@ -271,5 +273,5 @@ fn palign(cat_str: &[u8], suff_arry: &[usize], read:String, rs_maybe: &bio::data
 			*counts.entry(ref_names.get(&mode(&mode_consensus)).unwrap().to_string()).or_insert(0)  += 1;
 		}
 		*/
-	trans
+	palign_result
 }
