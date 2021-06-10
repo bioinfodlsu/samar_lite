@@ -131,7 +131,6 @@ fn best_in_pair(p1: &Vec<Vec<(u64,f64)>>, p2: &Vec<Vec<(u64,f64)>>, frame1: usiz
 		}
 	}
 
-	matches
 }
 
 fn best_in_frame(frames: &Vec<Vec<(u64,f64)>>) -> usize{
@@ -273,9 +272,9 @@ fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_
 		// Using Coverage
 		//else {
 	if !cov_consensus.is_empty(){
-		for (transcript, coverage) in cov_consensus.iter() {
+		for (protein, coverage) in cov_consensus.iter() {
 			if *coverage > threshold {
-				trans.push((*transcript,*coverage));
+				palign_result.push((*protein,*coverage));
 			}
 		}
 		//
@@ -286,5 +285,5 @@ fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_
 			*counts.entry(ref_names.get(&mode(&mode_consensus)).unwrap().to_string()).or_insert(0)  += 1;
 		}
 		*/
-	trans
+	palign_result
 }
