@@ -71,66 +71,81 @@ fn main() {
 	*/
 
 	//For Query
-	let path_q = Path::new("data/read_1.fastq");
+	let path_q = Path::new("data/sample_01_100000_interleaved.fastq");
     let reader_q =  fastq::Reader::from_file(path_q).expect("File not found");
 	//let paths = fs::read_dir(r"D:/data/reads_20mil_1txpg_protCoding.rep3/query").unwrap();
 	let mut records = reader_q.records();
 	
     while let (Some(Ok(pair1)),Some(Ok(pair2))) = (records.next(),records.next()){
-		println!("HERE IS READ: {} {}", pair1.id(),pair2.id());
+		//println!("HERE IS READ: {} {}", pair1.id(),pair2.id());
+		let temp_cat_str = cat_str.as_bytes();
+		let p1_frame_con = vec![palign(temp_cat_str, &suff_arry, translate(pair1.seq()).as_bytes(), &rs_maybe),
+								palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[1..]).as_bytes(), &rs_maybe),
+								palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[2..]).as_bytes(), &rs_maybe),
+								palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())).as_bytes(), &rs_maybe),
+								palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[1..]).as_bytes(), &rs_maybe),
+								palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[2..]).as_bytes(), &rs_maybe)];
+		//println!("{:?}",p1_frame_con);
 
-		let p1_frame_con = vec![palign(cat_str.as_bytes(), &suff_arry, translate(pair1.seq()), &rs_maybe),
-								palign(cat_str.as_bytes(), &suff_arry, translate(&pair1.seq()[1..]), &rs_maybe),
-								palign(cat_str.as_bytes(), &suff_arry, translate(&pair1.seq()[2..]), &rs_maybe),
-								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair1.seq())), &rs_maybe),
-								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair1.seq())[1..]), &rs_maybe),
-								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair1.seq())[2..]), &rs_maybe)];
-		println!("{:?}",p1_frame_con);
-
-		let p2_frame_con = vec![palign(cat_str.as_bytes(), &suff_arry, translate(pair2.seq()), &rs_maybe),
-								palign(cat_str.as_bytes(), &suff_arry, translate(&pair2.seq()[1..]), &rs_maybe),
-								palign(cat_str.as_bytes(), &suff_arry, translate(&pair2.seq()[2..]), &rs_maybe),
-								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair2.seq())), &rs_maybe),
-								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair2.seq())[1..]), &rs_maybe),
-								palign(cat_str.as_bytes(), &suff_arry, translate(&revcomp(pair2.seq())[2..]), &rs_maybe)];
+		let p2_frame_con = vec![palign(temp_cat_str, &suff_arry, translate(pair2.seq()).as_bytes(), &rs_maybe),
+								palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[1..]).as_bytes(), &rs_maybe),
+								palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[2..]).as_bytes(), &rs_maybe),
+								palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq())).as_bytes(), &rs_maybe),
+								palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq())[1..]).as_bytes(), &rs_maybe),
+								palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq())[2..]).as_bytes(), &rs_maybe)];
 		//println!("{:?}",p2_frame_con);
 
-		let mut p1_best = 10;
-		let mut max1 = 0;
+		let p1_frame = bestInFrame(&p1_frame_con);
+		let p2_frame = bestInFrame(&p2_frame_con);
 
-		for (i,info) in p1_frame_con.iter().enumerate(){
-			if info.len() > max1{
-				max1 = info.len();
-				p1_best = i;
-			}
-		}
-		if p1_best < 10{ 
-			println!("Best Frame Pair 1: {} {:?}",p1_best,p1_frame_con.get(p1_best).unwrap());
-		}
-		let mut p2_best = 10;
-		let mut max2 = 0;
+		//println!("{} Aligns to {:?}",pair1.id(), best_in_pair(&p1_frame_con, &p2_frame_con, p1_frame, p2_frame));
 
-		for (i,info) in p2_frame_con.iter().enumerate(){
-			if info.len() > max2{
-				max2 = info.len();
-				p2_best = i;
-			}
-		}
-		if p2_best < 10{
-			println!("Best Frame Pair 2: {} {:?}",p2_best,p2_frame_con.get(p2_best).unwrap());
-		}
-
-		let mut alignment: Vec<u64> = Vec::new();
-
-		while let (Some(first),Some(second)) = (p1_frame_con.iter().next(),p2_frame_con.iter().next()){
-			
-		}
 	} 
 
 	//println!("{:?}", read_alignments);
 	let elapsed = start.elapsed();
 	println!("Millis: {} ms", elapsed.as_millis());
 	println!("Reads Aligned: {}",counts.len());
+}
+
+fn best_in_pair(p1: &Vec<Vec<(u64,f64)>>, p2: &Vec<Vec<(u64,f64)>>, frame1: usize, frame2: usize) -> Vec<u64>{
+	let mut matches: Vec<u64> = Vec::new();
+
+	if frame1 < 10 && frame2 < 10{
+		for x in &p1[frame1]{
+			for y in &p2[frame2]{
+				if x.0 == y.0{
+					matches.push(x.0);
+				}
+			}
+		}
+	}
+	else if frame2 < 10 {
+		for x in &p2[frame2]{
+			matches.push(x.0);
+		}
+	}
+	else if frame1 < 10 {
+		for x in &p1[frame1]{
+			matches.push(x.0);
+		}
+	}
+
+	matches
+}
+
+fn best_in_frame(frames: &Vec<Vec<(u64,f64)>>) -> usize{
+	let mut best = 10;
+	let mut max = 0;
+
+	for (i,info) in frames.iter().enumerate(){
+		if info.len() > max{
+			max = info.len();
+			best = i;
+		}
+	}
+
+	best
 }
 
 fn mode(numbers: &[u64]) -> u64 {
@@ -186,7 +201,7 @@ fn b_search_mmp(s: &[u8], sa: &[usize], pat: &[u8], beg: usize, end: usize) -> (
 	(i,j-1)
 }
 
-fn palign(cat_str: &[u8], suff_arry: &[usize], read:String, rs_maybe: &bio::data_structures::rank_select::RankSelect) -> Vec<(u64,f64)>{
+fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_structures::rank_select::RankSelect) -> Vec<(u64,f64)>{
 	let mut trans: Vec<(u64,f64)> = Vec::new();
 	let kmer = 5;
 	let mut cov_consensus: HashMap<u64,f64> = HashMap::new(); 
@@ -198,7 +213,7 @@ fn palign(cat_str: &[u8], suff_arry: &[usize], read:String, rs_maybe: &bio::data
 		let read_k = &read[x..(x+kmer)];
 		//println!("{}",read_k);
 		// Go through suffix array and find a beg and end interval
-		let (beg,end) = b_search(cat_str, &suff_arry, read_k.as_bytes());
+		let (beg,end) = b_search(cat_str, &suff_arry, read_k);
 
 		let mut mmp = 0;
 		if beg <= end {
@@ -213,7 +228,7 @@ fn palign(cat_str: &[u8], suff_arry: &[usize], read:String, rs_maybe: &bio::data
 			while !done{
 				if (x+kmer+mmp+1) < read.len() {
 					let temp_read = &read[x..(x+kmer+mmp+1)];
-					let (temp_beg,temp_end) = b_search_mmp(cat_str, &suff_arry, temp_read.as_bytes(),beg_p,end_p + 1);
+					let (temp_beg,temp_end) = b_search_mmp(cat_str, &suff_arry, temp_read,beg_p,end_p + 1);
 					
 					if temp_beg <= temp_end{
 						beg_p = temp_beg;
