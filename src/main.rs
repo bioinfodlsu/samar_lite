@@ -11,9 +11,22 @@ use bio::alphabets::rna::revcomp;
 use protein_translate::translate;
 use std::collections::LinkedList;
 use std::process::{Command,Stdio};
+use argparse::{ArgumentParser, StoreTrue, Store};
 
 fn main() {
-	let path_r = Path::new("data/ref.fasta");
+
+	let mut ref_file = String::from("data/ref.fasta");
+	let mut query_file = String::from("data/sample_01_100000_interleaved.fastq");
+	{ // this block limits scope of borrows by ap.refer() method
+	let mut ap = ArgumentParser::new();
+	ap.set_description("Greet somebody.");
+	ap.refer(&mut ref_file)
+	.add_argument("Reference Sequence", Store, "Reference Fasta file");
+	ap.refer(&mut query_file)
+	.add_argument("Query Sequence", Store, "Query Interleaved Fastq file");
+	ap.parse_args_or_exit();
+	}
+	let path_r = Path::new(&ref_file);
     let mut reader = fasta::Reader::from_file(path_r).expect("File not found");
 
 	let mut nb_reads = 0;
@@ -35,7 +48,8 @@ fn main() {
 	let start = Instant::now();
 	
 	//For Reference
-	
+	let start_ref = Instant::now();
+	let start_ref_cat = Instant::now();
 	for result in reader.records() {
 		let record = result.expect("Error during fasta record parsing");
 		ref_map.insert(cat_str.len()+record.seq().len(),record.id().to_string());
@@ -52,13 +66,17 @@ fn main() {
 		nb_reads += 1;
 		nb_bases += record.seq().len();
 	}
+	let elapsed_ref_cat = start_ref_cat.elapsed();
 	
-	
+	let start_ref_suff = Instant::now();
 	let suff_arry = suffix_array(cat_str.as_bytes());
-		
+	let elapsed_ref_suff = start_ref_suff.elapsed();
 	
+	let start_ref_rank = Instant::now();
 	let rs_maybe = RankSelect::new(rank_bitvec,1); 
-	
+	let elapsed_ref_rank = start_ref_rank.elapsed();
+
+	let elapsed_ref = start_ref.elapsed();
 	/* Print Checks
 	println!("Number of reads: {}", nb_reads);
 	println!("Number of bases: {}", nb_bases);
@@ -71,7 +89,8 @@ fn main() {
 	*/
 
 	//For Query
-	let path_q = Path::new("data/sample_01_100000_interleaved.fastq");
+	let start_query = Instant::now();
+	let path_q = Path::new(&query_file);
     let reader_q =  fastq::Reader::from_file(path_q).expect("File not found");
 	//let paths = fs::read_dir(r"D:/data/reads_20mil_1txpg_protCoding.rep3/query").unwrap();
 	let mut records = reader_q.records();
@@ -79,6 +98,7 @@ fn main() {
     while let (Some(Ok(pair1)),Some(Ok(pair2))) = (records.next(),records.next()){
 		//println!("HERE IS READ: {} {}", pair1.id(),pair2.id());
 		let temp_cat_str = cat_str.as_bytes();
+		let start_query_frame1 = Instant::now();
 		let p1_frame_con = vec![palign(temp_cat_str, &suff_arry, translate(pair1.seq()).as_bytes(), &rs_maybe),
 								palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[1..]).as_bytes(), &rs_maybe),
 								palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[2..]).as_bytes(), &rs_maybe),
@@ -86,7 +106,10 @@ fn main() {
 								palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[1..]).as_bytes(), &rs_maybe),
 								palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[2..]).as_bytes(), &rs_maybe)];
 		//println!("{:?}",p1_frame_con);
+		let elapsed_query_frame1 = start_query_frame1.elapsed();
+		//println!("Query Frame1 time: {} ms", elapsed_query_frame1.as_millis());
 
+		let start_query_frame2 = Instant::now();
 		let p2_frame_con = vec![palign(temp_cat_str, &suff_arry, translate(pair2.seq()).as_bytes(), &rs_maybe),
 								palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[1..]).as_bytes(), &rs_maybe),
 								palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[2..]).as_bytes(), &rs_maybe),
@@ -94,17 +117,31 @@ fn main() {
 								palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq())[1..]).as_bytes(), &rs_maybe),
 								palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq())[2..]).as_bytes(), &rs_maybe)];
 		//println!("{:?}",p2_frame_con);
+		let elapsed_query_frame2 = start_query_frame2.elapsed();
+		//println!("Query Frame2 time: {} ms", elapsed_query_frame2.as_millis());
 
-		let p1_frame = bestInFrame(&p1_frame_con);
-		let p2_frame = bestInFrame(&p2_frame_con);
+		let start_query_best_frame = Instant::now();
+		let p1_frame = best_in_frame(&p1_frame_con);
+		let p2_frame = best_in_frame(&p2_frame_con);
 
-		//println!("{} Aligns to {:?}",pair1.id(), best_in_pair(&p1_frame_con, &p2_frame_con, p1_frame, p2_frame));
+		let elapsed_query_best_frame = start_query_best_frame.elapsed();
+		//println!("Query Best Frame time: {} ms", elapsed_query_best_frame.as_millis());
 
+		let start_query_best = Instant::now();
+		best_in_pair(&p1_frame_con, &p2_frame_con, p1_frame, p2_frame);
+		//println!("{} Aligns to {:?}",pair1.id(), );
+		let elapsed_query_best = start_query_best.elapsed();
+		//println!("Query Best time: {} ms", elapsed_query_best.as_millis());
 	} 
-
+	let elapsed_query = start_query.elapsed();
 	//println!("{:?}", read_alignments);
 	let elapsed = start.elapsed();
-	println!("Millis: {} ms", elapsed.as_millis());
+	println!("time: {} seconds", elapsed.as_millis()/1000);
+	println!("Read and Cat time: {} seconds", elapsed_ref_cat.as_millis()/1000);
+	println!("Suff time: {} seconds", elapsed_ref_suff.as_millis()/1000);
+	println!("Rank time: {} seconds", elapsed_ref_rank.as_millis()/1000);
+	println!("Query time: {} seconds", elapsed_query.as_millis()/1000);
+	println!("Entire Ref time: {} seconds", elapsed_ref.as_millis()/1000);
 	println!("Reads Aligned: {}",counts.len());
 }
 
@@ -131,6 +168,7 @@ fn best_in_pair(p1: &Vec<Vec<(u64,f64)>>, p2: &Vec<Vec<(u64,f64)>>, frame1: usiz
 		}
 	}
 
+	matches
 }
 
 fn best_in_frame(frames: &Vec<Vec<(u64,f64)>>) -> usize{
@@ -205,15 +243,17 @@ fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_
 	let kmer = 5;
 	let mut cov_consensus: HashMap<u64,f64> = HashMap::new(); 
 	let threshold:f64 = 33.3;
-	
+	//let start_align = Instant::now();
 	let mut x = 0;
 	let seqlen = read.len();
 	while x < (seqlen-kmer+1){
 		let read_k = &read[x..(x+kmer)];
 		//println!("{}",read_k);
 		// Go through suffix array and find a beg and end interval
+		//let start_align_initial = Instant::now();
 		let (beg,end) = b_search(cat_str, &suff_arry, read_k);
-
+		//let elapsed_align_initial = start_align_initial.elapsed();
+		//println!("Align Initial Time: {} seconds", elapsed_align_initial.as_millis());
 		let mut mmp = 0;
 		if beg <= end {
 			//println!("Interval found: {}",read_k);
@@ -224,6 +264,7 @@ fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_
 			//finding MMP
 			//println!("SA index Match: Beg: {} & End: {}",beg,end);
 			let mut done = false; 
+			let start_align_mmp = Instant::now();
 			while !done{
 				if (x+kmer+mmp+1) < read.len() {
 					let temp_read = &read[x..(x+kmer+mmp+1)];
@@ -242,6 +283,8 @@ fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_
 					done = true;
 				}
 			}
+			//let elapsed_align_mmp = start_align_mmp.elapsed();
+			//println!("Align MMP Time: {} seconds", elapsed_align_mmp.as_millis());
 			//println!("MMP: {}",mmp);
 			//println!("Beg prime: {} & End prime: {}", beg_p,end_p);
 			//println!("{} {} {}",seqlen, kmer, mmp);
@@ -272,9 +315,9 @@ fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_
 		// Using Coverage
 		//else {
 	if !cov_consensus.is_empty(){
-		for (protein, coverage) in cov_consensus.iter() {
+		for (transcript, coverage) in cov_consensus.iter() {
 			if *coverage > threshold {
-				palign_result.push((*protein,*coverage));
+				trans.push((*transcript,*coverage));
 			}
 		}
 		//
@@ -285,5 +328,10 @@ fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_
 			*counts.entry(ref_names.get(&mode(&mode_consensus)).unwrap().to_string()).or_insert(0)  += 1;
 		}
 		*/
-	palign_result
+
+	//let elapsed_align = start_align.elapsed();
+	//println!("Align Time: {} seconds", elapsed_align.as_millis());
+	
+
+	trans
 }
