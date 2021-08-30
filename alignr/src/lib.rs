@@ -96,12 +96,10 @@ pub fn b_search_mmp(s: &[u8], sa: &[usize], pat: &[u8], beg: usize, end: usize) 
 }
 
 
-
-pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<String,(u64,u64)>, bench: bool) -> Vec<(String,f64)>{
+// ToDo fix variable names, Match K to the reference index,argparse for threshold
+pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<String,(u64,u64)>, bench: bool,kmer:usize, threshold: f64) -> Vec<(String,f64)>{
 	let mut trans: Vec<(String,f64)> = Vec::new();
-	let kmer = 5;
 	let mut cov_consensus: HashMap<String,f64> = HashMap::new(); 
-	let threshold:f64 = 1.0;
 	let mut x = 0;
 	let seqlen = read.len();
 	let align_time = Instant::now();

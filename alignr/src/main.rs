@@ -15,15 +15,16 @@ use std::collections::HashMap;
 struct Ref {
     cat_str: String,
     suff_arry: Vec<usize>,
-    rs_maybe: RankSelect,
+    rank_select: RankSelect,
 	ref_names: HashMap<u64,String>,
-	hash_table: HashMap<String, (u64,u64)>
+	hash_table: HashMap<String, (u64,u64)>,
+	k: usize
 }
 
 fn main() {
 
 	let mut ref_file = String::from("data/ref.fasta");
-	let mut query_file = String::from("data/sample_01_300000_interleaved.fastq");
+	let mut query_file = String::from("data/sample_01_10000_interleaved.fastq");
 	// { // this block limits scope of borrows by ap.refer() method
 	// let mut ap = ArgumentParser::new();
 	// ap.set_description("Greet somebody.");
@@ -63,20 +64,25 @@ fn main() {
     let reader_q =  fastq::Reader::from_file(path_q);
 	//let paths = fs::read_dir(r"D:/data/reads_20mil_1txpg_protCoding.rep3/query").unwrap();
 	let mut records = reader_q.unwrap().records();
+	let temp_cat_str = ref_struct.cat_str.as_bytes();
+	let suff_arry = ref_struct.suff_arry;
+	let rank_select = ref_struct.rank_select;
+	let ref_names = ref_struct.ref_names;
+	let hash_table = ref_struct.hash_table;
+	let k = ref_struct.k;
+	let threshold:f64 = 1.0;
 	
     while let (Some(Ok(pair1)),Some(Ok(pair2))) = (records.next(),records.next()){
 		//println!("HERE IS READ: {} {}", pair1.id(),pair2.id());
 
-		let temp_cat_str = ref_struct.cat_str.as_bytes();
-
 		let frame1_time = Instant::now();
 
-		let p1_frame_con = vec![alignr::palign(temp_cat_str, &ref_struct.suff_arry, translate(pair1.seq()).as_bytes(), &ref_struct.rs_maybe, &ref_struct.ref_names, &ref_struct.hash_table,bench),
-								alignr::palign(temp_cat_str, &ref_struct.suff_arry, translate(&pair1.seq()[1..]).as_bytes(), &ref_struct.rs_maybe, &ref_struct.ref_names, &ref_struct.hash_table,bench),
-								alignr::palign(temp_cat_str, &ref_struct.suff_arry, translate(&pair1.seq()[2..]).as_bytes(), &ref_struct.rs_maybe, &ref_struct.ref_names, &ref_struct.hash_table,bench),
-								alignr::palign(temp_cat_str, &ref_struct.suff_arry, translate(&revcomp(pair1.seq())).as_bytes(), &ref_struct.rs_maybe, &ref_struct.ref_names, &ref_struct.hash_table,bench),
-								alignr::palign(temp_cat_str, &ref_struct.suff_arry, translate(&revcomp(pair1.seq())[1..]).as_bytes(), &ref_struct.rs_maybe, &ref_struct.ref_names, &ref_struct.hash_table,bench),
-								alignr::palign(temp_cat_str, &ref_struct.suff_arry, translate(&revcomp(pair1.seq())[2..]).as_bytes(), &ref_struct.rs_maybe, &ref_struct.ref_names, &ref_struct.hash_table,bench)];
+		let p1_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(pair1.seq()).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold)];
 		
 		if bench{
 			println!("Frame1: {:?}",frame1_time.elapsed());
@@ -84,12 +90,12 @@ fn main() {
 		//println!("{:?}",p1_frame_con);
 		let frame2_time = Instant::now();
 
-		let p2_frame_con = vec![alignr::palign(temp_cat_str, &ref_struct.suff_arry, translate(pair2.seq()).as_bytes(), &ref_struct.rs_maybe,&ref_struct.ref_names, &ref_struct.hash_table,bench),
-								alignr::palign(temp_cat_str, &ref_struct.suff_arry, translate(&pair2.seq()[1..]).as_bytes(), &ref_struct.rs_maybe,&ref_struct.ref_names, &ref_struct.hash_table,bench),
-								alignr::palign(temp_cat_str, &ref_struct.suff_arry, translate(&pair2.seq()[2..]).as_bytes(), &ref_struct.rs_maybe,&ref_struct.ref_names, &ref_struct.hash_table,bench),
-								alignr::palign(temp_cat_str, &ref_struct.suff_arry, translate(&revcomp(pair2.seq())).as_bytes(), &ref_struct.rs_maybe,&ref_struct.ref_names, &ref_struct.hash_table,bench),
-								alignr::palign(temp_cat_str, &ref_struct.suff_arry, translate(&revcomp(pair2.seq())[1..]).as_bytes(), &ref_struct.rs_maybe,&ref_struct.ref_names, &ref_struct.hash_table,bench),
-								alignr::palign(temp_cat_str, &ref_struct.suff_arry, translate(&revcomp(pair2.seq())[2..]).as_bytes(), &ref_struct.rs_maybe,&ref_struct.ref_names, &ref_struct.hash_table,bench)];
+		let p2_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(pair2.seq()).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq())).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq())[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq())[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold)];
 		if bench{
 			println!("Frame2: {:?}",frame2_time.elapsed());
 		}
