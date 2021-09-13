@@ -28,15 +28,36 @@ pub fn best_in_pair(p1: &Vec<Vec<(String,f64)>>, p2: &Vec<Vec<(String,f64)>>, fr
 	matches
 }
 
-pub fn best_in_frame(frames: &Vec<Vec<(String,f64)>>) -> usize{
+pub fn best_in_frame_max(frames: &Vec<Vec<(String,f64)>>) -> usize{
 	let mut best = 10;
-	let mut max = 0;
+	let mut max = 0.0;
 
 	for (i,info) in frames.iter().enumerate(){
-		if info.len() > max{
-			max = info.len();
+		for j in info.iter(){
+			if j.1 > max{
+				max = j.1;
+				best = i;
+			}
+		}
+	}
+
+	best
+}
+
+pub fn best_in_frame_sum(frames: &Vec<Vec<(String,f64)>>) -> usize{
+	let mut best = 10;
+	let mut max = 0.0;
+	let mut sum = 0.0;
+
+	for (i,info) in frames.iter().enumerate(){
+		for j in info.iter(){
+			sum+= j.1;
+		}
+		if sum > max{
+			max = sum;
 			best = i;
 		}
+		sum = 0.0;
 	}
 
 	best
