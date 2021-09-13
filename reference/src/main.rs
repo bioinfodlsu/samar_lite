@@ -17,9 +17,10 @@ struct Ref {
     cat_str: String,
     //qgram: qgram_index::QGramIndex,
 	suff_arry: Vec<usize>,
-    rank_select: RankSelect,
+    	rank_select: RankSelect,
 	ref_names: HashMap<u64,String>,
 	hash_table: HashMap<String,(u64,u64)>,
+	k: usize
 }
 
 fn main() {
@@ -29,15 +30,15 @@ fn main() {
 	let mut ref_path = String::from("ref.fasta");
 	let path_r = Path::new(&ref_path);
     let reader = fasta::Reader::from_file(path_r).expect("File not found");
-	let mut k = 5;
+	let mut k:usize = 5;
 	{ // this block limits scope of borrows by ap.refer() method
 	let mut ap = ArgumentParser::new();
 	ap.set_description("Reference Creator for Samar-lite");
 	ap.refer(&mut ref_path)
-	.add_option(&["-r", "--reference"], Store,
+	.add_argument("Reference", Store,
 	"Reference Fasta File");
 	ap.refer(&mut k)
-	.add_option(&["-k","--kmer"], Store,
+	.add_argument("kmer", Store,
 	"Kmer for alignment");
 	ap.parse_args_or_exit();
 	}
@@ -105,7 +106,8 @@ fn main() {
 		suff_arry,
 		rank_select,
 		ref_names,
-		hash_table
+		hash_table,
+		k
 	};
 	
 	serde_json::to_writer(&File::create("data_suffarry.json").unwrap(), &test);
