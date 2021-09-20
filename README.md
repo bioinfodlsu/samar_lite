@@ -1,4 +1,4 @@
-##Compiling to Binary 
+#Compiling to Binary 
 
 In the root directory of the project, open the terminal and input the commnad:
 
