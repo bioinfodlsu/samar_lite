@@ -78,7 +78,7 @@ fn main() {
 	let ref_names = ref_struct.ref_names;
 	let hash_table = ref_struct.hash_table;
 	let k = ref_struct.k;
-	
+	let mut count = 0;
 	
     while let (Some(Ok(pair1)),Some(Ok(pair2))) = (records.next(),records.next()){
 		//println!("HERE IS READ: {} {}", pair1.id(),pair2.id());
@@ -158,11 +158,27 @@ fn main() {
 		// }
 
 		//TODO: Segregate the pairs into p1 and p2 and into frames
-		 println!("{} Aligns to {:?}",pair1.id(), p1_frame_con[p1_frame]);
-		 println!("{} Aligns to {:?}",pair2.id(), p2_frame_con[p2_frame]);
+		if p1_frame < 10 {
+			println!("{} Aligns to {:?}",pair1.id(), p1_frame_con[p1_frame]);
+		}
+		else{
+			println!("{} Aligns to []",pair1.id());
+		}
+
+		if p2_frame < 10 {
+			println!("{} Aligns to {:?}",pair2.id(), p2_frame_con[p2_frame]);
+		}
+		else{
+			println!("{} Aligns to []",pair2.id());
+		}
+
 		//println!("{}",pair1.id());
 		//println!("{}",pair2.id());
+		count += 2;
 	} 
+
+	//println!("Count: {}", count);
+
 	let elapsed_query = start_query.elapsed();
 	//println!("{:?}", read_alignments);
 	let elapsed = start.elapsed();
