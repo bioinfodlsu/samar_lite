@@ -29,7 +29,7 @@ fn main() {
 	*/
 	let mut ref_path = String::from("ref.fasta");
 	let path_r = Path::new(&ref_path);
-    let reader = fasta::Reader::from_file(path_r).expect("File not found");
+    	let reader = fasta::Reader::from_file(path_r).expect("File not found");
 	let mut k:usize = 5;
 	{ // this block limits scope of borrows by ap.refer() method
 	let mut ap = ArgumentParser::new();

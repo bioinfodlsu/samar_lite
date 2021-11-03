@@ -79,11 +79,9 @@ fn main() {
 	let hash_table = ref_struct.hash_table;
 	let k = ref_struct.k;
 	let mut count = 0;
-	
     while let (Some(Ok(pair1)),Some(Ok(pair2))) = (records.next(),records.next()){
 		//println!("HERE IS READ: {} {}", pair1.id(),pair2.id());
 		//println!("HERE IS READ: pair1{:?}\n pair2{:?}", pair1.seq(),pair2.seq());
-
 		let frame1_time = Instant::now();
 
 		//Vector of 6 vectors, each element is a vector of tuples the gene name and the coverage 
