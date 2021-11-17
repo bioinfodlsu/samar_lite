@@ -22,12 +22,10 @@ struct Ref {
 }
 
 fn main() {
-	//TODO: USE ARGUMENT PARSER 
-	let mut ref_file = String::from("data/data_suffarry.json");
-	let mut query_file = String::from("data/test_sample_01_2.fastq");
+	let mut ref_file = String::from("test/data_suffarry_4.json");
+	let mut query_file = String::from("test/sample_01_interleave_10.fastq");
 
-	//TODO: To be set by arg parse
-	let mut threshold:f64 = 1.0;
+	let mut threshold:f64 = 30.0;
 	let mut bench = false;
 
 	{ // this block limits scope of borrows by ap.refer() method
@@ -78,7 +76,6 @@ fn main() {
 	let ref_names = ref_struct.ref_names;
 	let hash_table = ref_struct.hash_table;
 	let k = ref_struct.k;
-	let mut count = 0;
     while let (Some(Ok(pair1)),Some(Ok(pair2))) = (records.next(),records.next()){
 		//println!("HERE IS READ: {} {}", pair1.id(),pair2.id());
 		//println!("HERE IS READ: pair1{:?}\n pair2{:?}", pair1.seq(),pair2.seq());
@@ -95,7 +92,7 @@ fn main() {
 		if bench{
 			println!("Frame1: {:?}",frame1_time.elapsed());
 		}
-		//println!("{:?}",p1_frame_con);
+		//println!("FRAME CON \n{:?}",p1_frame_con);
 		let frame2_time = Instant::now();
 
 		let p2_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
@@ -111,7 +108,7 @@ fn main() {
 		//Notes: Pairing information can be used to improve choice
 
 		
-		//println!("{:?}",p2_frame_con);
+		//println!("FRAME CON \n{:?}",p2_frame_con);
 
 		let frame1_best_time = Instant::now();
 		//let p1_frame = alignr::best_in_frame_sum(&p1_frame_con);
@@ -157,22 +154,21 @@ fn main() {
 
 		//TODO: Segregate the pairs into p1 and p2 and into frames
 		if p1_frame < 10 {
-			println!("{} Aligns to {:?}",pair1.id(), p1_frame_con[p1_frame]);
+			println!("{}\t{:?}",pair1.id(), p1_frame_con[p1_frame]);
 		}
 		else{
-			println!("{} Aligns to []",pair1.id());
+			println!("{}\t[]",pair1.id());
 		}
 
 		if p2_frame < 10 {
-			println!("{} Aligns to {:?}",pair2.id(), p2_frame_con[p2_frame]);
+			println!("{}\t{:?}",pair2.id(), p2_frame_con[p2_frame]);
 		}
 		else{
-			println!("{} Aligns to []",pair2.id());
+			println!("{}\t[]",pair2.id());
 		}
 
 		//println!("{}",pair1.id());
 		//println!("{}",pair2.id());
-		count += 2;
 	} 
 
 	//println!("Count: {}", count);

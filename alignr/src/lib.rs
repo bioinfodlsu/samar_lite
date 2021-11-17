@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap,HashSet};
 use std::time::Instant;
 use std::str;
 
@@ -158,6 +158,8 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 			//println!("SA index Match: Beg: {} & End: {}",beg,end);
 			let mut done = false; 
 			let mmp_time = Instant::now();
+			let mut ref_pro: HashSet<String> = HashSet::new();
+
 			while !done{
 				if (x+kmer+mmp+1) < read.len() {
 					let temp_read = &read[x..(x+kmer+mmp+1)];
@@ -184,18 +186,24 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 			//println!("Beg prime: {} & End prime: {}", beg_p,end_p);
 			//println!("{} {} {}",seqlen, kmer, mmp);
 			let add_consensus = Instant::now();
-			for x in beg..(end+1){
+
+			for x in beg_p..(end_p+1){
 				//consensus.push(HashSet::new().insert(rs_maybe.rank(suff_arry[x] as u64).unwrap()));
 				//mode_consensus.push(rs_maybe.rank(suff_arry[x] as u64).unwrap());
-				if x >= beg_p as u64 && x <= end_p as u64{
-					*cov_consensus.entry(ref_names[&rs_maybe.rank(suff_arry[x as usize]as u64).unwrap()].clone()).or_insert(0.0) += (kmer + mmp) as f64 / seqlen as f64 * 100.0;
+				//if x >= beg_p as u64 && x <= end_p as u64{
+				ref_pro.insert(ref_names[&rs_maybe.rank(suff_arry[x as usize]as u64).unwrap()].clone());
+				/*
 				}
-				else{
+				else
 					*cov_consensus.entry(ref_names[&rs_maybe.rank(suff_arry[x as usize]as u64).unwrap()].clone()).or_insert(0.0) += (kmer) as f64 / seqlen as f64 * 100.0;
 				}
+				*/
 			}
 			if bench{
 				println!("AddCon: {:?}",add_consensus.elapsed());
+			}
+			for refs in ref_pro{
+				*cov_consensus.entry(refs).or_insert(0.0) += (kmer + mmp) as f64;
 			}
 		}	
 		x += 1+mmp;
@@ -223,11 +231,14 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 	if !cov_consensus.is_empty(){
 		let consensus_time = Instant::now();
 		for (transcript, coverage) in cov_consensus.iter() {
-			if *coverage > threshold {
-				trans.push((transcript.clone(),*coverage));
+			//println!("Transcript {}: Coverage {}",transcript,coverage);
+			let cov = *coverage / seqlen as f64 * 100.0;
+			//println!("Overall {}", cov);
+			if cov > threshold {
+				trans.push((transcript.clone(),cov));
 			}
 		}
-		//
+		
 		if bench{
 			println!("Consensus: {:?}",consensus_time.elapsed());
 		}
