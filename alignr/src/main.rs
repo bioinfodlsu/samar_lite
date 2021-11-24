@@ -22,24 +22,20 @@ struct Ref {
 }
 
 fn main() {
-	let mut ref_file = String::from("test/data_suffarry_4.json");
-	let mut query_file = String::from("test/sample_01_interleave_10.fastq");
+	let mut ref_file = String::from("test/data_suffarry_7.json");
+	let mut query_file = String::from("test/kmertest.fastq");
 
 	let mut threshold:f64 = 30.0;
 	let mut bench = false;
 
 	{ // this block limits scope of borrows by ap.refer() method
-	let mut ap = ArgumentParser::new();
-	ap.set_description("Generate a Pseudo Alignment");
-	ap.refer(&mut ref_file)
-	.add_argument("Reference Sequence", Store, "Reference Fasta file");
-	ap.refer(&mut query_file)
-	.add_argument("Query Sequence", Store, "Query Interleaved Fastq file");
-	ap.refer(&mut threshold)
-	.add_argument("Threshold", Store, "Coverage threshold (Must be Floating Point)");
-	ap.refer(&mut bench)
-	.add_option(&["-b", "--bench"], StoreTrue, "Benchmarking");
-	ap.parse_args_or_exit();
+		let mut ap = ArgumentParser::new();
+		ap.set_description("Generate a Pseudo Alignment");
+		ap.refer(&mut ref_file).add_argument("Reference Sequence", Store, "Reference Fasta file");
+		ap.refer(&mut query_file).add_argument("Query Sequence", Store, "Query Interleaved Fastq file");
+		ap.refer(&mut threshold).add_argument("Threshold", Store, "Coverage threshold (Must be Floating Point)");
+		ap.refer(&mut bench).add_option(&["-b", "--bench"], StoreTrue, "Benchmarking");
+		ap.parse_args_or_exit();
 	}
 
 	let start = Instant::now();
@@ -82,33 +78,33 @@ fn main() {
 		let frame1_time = Instant::now();
 
 		//Vector of 6 vectors, each element is a vector of tuples the gene name and the coverage 
-		let p1_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold)];
+		println!("HERE IS READ1: {}",pair1.id());
+		let p1_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,1),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,2),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,3),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,4),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,5),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,6)];
 		
 		if bench{
 			println!("Frame1: {:?}",frame1_time.elapsed());
 		}
-		//println!("FRAME CON \n{:?}",p1_frame_con);
+		println!("FRAME1 CON \n{:?}",p1_frame_con);
 		let frame2_time = Instant::now();
-
-		let p2_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) ).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) [1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) [2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold)];
+		println!("HERE IS READ2: {}",pair2.id());
+		let p2_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,1),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,2),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,3),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) ).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,4),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) [1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,5),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) [2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,6)];
 		if bench{
 			println!("Frame2: {:?}",frame2_time.elapsed());
 		}
 		//IMPORTANT TODO: Utilize Coverage for Best in Frame (Max of Max and Max of Sum)
 		//Notes: Pairing information can be used to improve choice
 
-		
-		//println!("FRAME CON \n{:?}",p2_frame_con);
+		println!("FRAME2 CON \n{:?}",p2_frame_con);
 
 		let frame1_best_time = Instant::now();
 		//let p1_frame = alignr::best_in_frame_sum(&p1_frame_con);

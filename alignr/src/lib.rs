@@ -118,13 +118,14 @@ pub fn b_search_mmp(s: &[u8], sa: &[usize], pat: &[u8], beg: usize, end: usize) 
 
 
 // ToDo fix variable names, Match K to the reference index,argparse for threshold
-pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<String,(u64,u64)>, bench: bool,kmer:usize, threshold: f64) -> Vec<(String,f64)>{
+pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<String,(u64,u64)>, bench: bool,kmer:usize, threshold: f64,  frame:u64) -> Vec<(String,f64)>{
 	let mut trans: Vec<(String,f64)> = Vec::new();
 	let mut cov_consensus: HashMap<String,f64> = HashMap::new(); 
 	let mut x = 0;
 	let seqlen = read.len();
 	let align_time = Instant::now();
 	let kmer_time = Instant::now();
+	println!("frame {}: k {}: seq_len {}: READ {:?}",frame,kmer,seqlen,std::str::from_utf8(&read).unwrap());
 	while x < (seqlen-kmer+1){
 		let read_k = &read[x..(x+kmer)];
 		//println!("Read: {:?}",read_k);
@@ -162,7 +163,7 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 
 			while !done{
 				if (x+kmer+mmp+1) < read.len() {
-					let temp_read = &read[x..(x+kmer+mmp+1)];
+					let temp_read = &read[x..(x+kmer+mmp)];
 					let (temp_beg,temp_end) = b_search_mmp(cat_str, &suff_arry, temp_read,beg_p as usize,(end_p + 1) as usize);
 					
 					if temp_beg <= temp_end{
@@ -186,7 +187,8 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 			//println!("Beg prime: {} & End prime: {}", beg_p,end_p);
 			//println!("{} {} {}",seqlen, kmer, mmp);
 			let add_consensus = Instant::now();
-
+			println!("mmp {}, x {}",mmp,x);
+			println!("PART OF READ {:?}", std::str::from_utf8(&read[x..(x+kmer+mmp)]).unwrap());
 			for x in beg_p..(end_p+1){
 				//consensus.push(HashSet::new().insert(rs_maybe.rank(suff_arry[x] as u64).unwrap()));
 				//mode_consensus.push(rs_maybe.rank(suff_arry[x] as u64).unwrap());
@@ -199,6 +201,7 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 				}
 				*/
 			}
+			println!("Refs {:?}",ref_pro);
 			if bench{
 				println!("AddCon: {:?}",add_consensus.elapsed());
 			}
@@ -206,7 +209,12 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 				*cov_consensus.entry(refs).or_insert(0.0) += (kmer + mmp) as f64;
 			}
 		}	
-		x += 1+mmp;
+		if mmp > 0{
+			x += kmer + mmp;
+		}
+		else{
+			x += 1;
+		}
 	}
 	if bench{
 		println!("KmerPerRead: {:?}",kmer_time.elapsed());
@@ -229,6 +237,7 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 		// Using Coverage
 		//else {
 	if !cov_consensus.is_empty(){
+		println!{"Consensus: {:?}", cov_consensus};
 		let consensus_time = Instant::now();
 		for (transcript, coverage) in cov_consensus.iter() {
 			//println!("Transcript {}: Coverage {}",transcript,coverage);
