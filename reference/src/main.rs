@@ -28,20 +28,17 @@ fn main() {
 		Add ArgParse to Input the reference
 	*/
 	let mut ref_path = String::from("ref.fasta");
-	let path_r = Path::new(&ref_path);
-    	let reader = fasta::Reader::from_file(path_r).expect("File not found");
 	let mut k:usize = 5;
 	{ // this block limits scope of borrows by ap.refer() method
-	let mut ap = ArgumentParser::new();
-	ap.set_description("Reference Creator for Samar-lite");
-	ap.refer(&mut ref_path)
-	.add_argument("Reference", Store,
-	"Reference Fasta File");
-	ap.refer(&mut k)
-	.add_argument("kmer", Store,
-	"Kmer for alignment");
-	ap.parse_args_or_exit();
+		let mut ap = ArgumentParser::new();
+		ap.set_description("Reference Creator for Samar-lite");
+		ap.refer(&mut ref_path).add_argument("Reference", Store,"Reference Fasta File");
+		ap.refer(&mut k).add_argument("kmer", Store,"Kmer for alignment");
+		ap.parse_args_or_exit();
 	}
+
+	let path_r = Path::new(&ref_path);
+    	let reader = fasta::Reader::from_file(path_r).expect("File not found");
 
 	let mut ref_names: HashMap<u64,String> = HashMap::new();
 	let mut cat_str = String::new();
