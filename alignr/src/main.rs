@@ -8,7 +8,7 @@ use bio::alphabets::dna::revcomp;
 use protein_translate::translate;
 use argparse::{ArgumentParser, StoreTrue, Store};
 use serde::{Deserialize};
-use std::io::BufReader;
+use std::io::{BufReader,BufWriter,Write};
 use std::collections::HashMap;
 
 #[derive(Deserialize)]
@@ -23,7 +23,8 @@ struct Ref {
 
 fn main() {
 	let mut ref_file = String::from("test/data_suffarry_7.json");
-	let mut query_file = String::from("test/kmertest.fastq");
+	let mut query_file = String::from("data/sample_01_10000_interleaved.fastq");
+	let mut output_file = String::from("output.counts");
 
 	let mut threshold:f64 = 30.0;
 	let mut bench = false;
@@ -34,21 +35,22 @@ fn main() {
 		ap.refer(&mut ref_file).add_argument("Reference Sequence", Store, "Reference Fasta file");
 		ap.refer(&mut query_file).add_argument("Query Sequence", Store, "Query Interleaved Fastq file");
 		ap.refer(&mut threshold).add_argument("Threshold", Store, "Coverage threshold (Must be Floating Point)");
+		ap.refer(&mut output_file).add_argument("Output File", Store, "Output counts of samar_lite");
 		ap.refer(&mut bench).add_option(&["-b", "--bench"], StoreTrue, "Benchmarking");
 		ap.parse_args_or_exit();
 	}
 
-	let start = Instant::now();
+	// let start = Instant::now();
 	
 	//For Reference
-	let start_ref = Instant::now();
+	// let start_ref = Instant::now();
 	//TODO: PASS JSON LOCATION AND FILENAME FROM REFERENCe
 	let file = File::open(ref_file).unwrap();
     let reader = BufReader::new(file);
 
 	let ref_struct:Ref = serde_json::from_reader(reader).unwrap();
 
-	let elapsed_ref = start_ref.elapsed();
+	// let elapsed_ref = start_ref.elapsed();
 	/* Print Checks
 	println!("Number of reads: {}", nb_reads);
 	println!("Number of bases: {}", nb_bases);
@@ -72,13 +74,16 @@ fn main() {
 	let ref_names = ref_struct.ref_names;
 	let hash_table = ref_struct.hash_table;
 	let k = ref_struct.k;
+
+	let mut out: HashMap<String,u64> = HashMap::new();	
+
     while let (Some(Ok(pair1)),Some(Ok(pair2))) = (records.next(),records.next()){
 		//println!("HERE IS READ: {} {}", pair1.id(),pair2.id());
 		//println!("HERE IS READ: pair1{:?}\n pair2{:?}", pair1.seq(),pair2.seq());
-		let frame1_time = Instant::now();
+		// let frame1_time = Instant::now();
 
 		//Vector of 6 vectors, each element is a vector of tuples the gene name and the coverage 
-		println!("HERE IS READ1: {}",pair1.id());
+		//println!("HERE IS READ1: {}",pair1.id());
 		let p1_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,1),
 								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,2),
 								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,3),
@@ -86,44 +91,50 @@ fn main() {
 								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,5),
 								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,6)];
 		
-		if bench{
-			println!("Frame1: {:?}",frame1_time.elapsed());
-		}
-		println!("FRAME1 CON \n{:?}",p1_frame_con);
-		let frame2_time = Instant::now();
-		println!("HERE IS READ2: {}",pair2.id());
+		// if bench{
+		// 	println!("Frame1: {:?}",frame1_time.elapsed());
+		// }
+		//println!("FRAME1 CON \n{:?}",p1_frame_con);
+		//let frame2_time = Instant::now();
+		//println!("HERE IS READ2: {}",pair2.id());
 		let p2_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,1),
 								alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,2),
 								alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,3),
 								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) ).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,4),
 								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) [1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,5),
 								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) [2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,6)];
-		if bench{
-			println!("Frame2: {:?}",frame2_time.elapsed());
-		}
+		// if bench{
+		// 	println!("Frame2: {:?}",frame2_time.elapsed());
+		// }
 		//IMPORTANT TODO: Utilize Coverage for Best in Frame (Max of Max and Max of Sum)
 		//Notes: Pairing information can be used to improve choice
 
-		println!("FRAME2 CON \n{:?}",p2_frame_con);
+		//println!("FRAME2 CON \n{:?}",p2_frame_con);
 
-		let frame1_best_time = Instant::now();
+		//let frame1_best_time = Instant::now();
 		//let p1_frame = alignr::best_in_frame_sum(&p1_frame_con);
 		let p1_frame = alignr::best_in_frame_max(&p1_frame_con);
-		if bench{
-			println!("Frame1Best: {:?}",frame1_best_time.elapsed());
-		}
+		// if bench{
+		// 	println!("Frame1Best: {:?}",frame1_best_time.elapsed());
+		// }
 
-		let frame2_best_time = Instant::now();
+		//let frame2_best_time = Instant::now();
 		//let p2_frame = alignr::best_in_frame_sum(&p2_frame_con);
 		let p2_frame = alignr::best_in_frame_max(&p2_frame_con);
-		if bench{
-			println!("Frame2Best: {:?}",frame2_best_time.elapsed());
+		// if bench{
+		// 	println!("Frame2Best: {:?}",frame2_best_time.elapsed());
+		// }
+
+		let best_pair = alignr::best_in_pair(&p1_frame_con, &p2_frame_con, p1_frame, p2_frame);
+		
+		if best_pair != "None"{
+			*out.entry(best_pair).or_insert(0) += 1;
 		}
 		/*
 		//println!("{:?}",p1_frame);
 		//println!("{:?}",p2_frame);
 		let best_pair_time = Instant::now();
-		alignr::best_in_pair(&p1_frame_con, &p2_frame_con, p1_frame, p2_frame);
+		;
 		if bench{
 		println!("BestPair: {:?}",best_pair_time.elapsed());
 		}
@@ -149,6 +160,7 @@ fn main() {
 		// }
 
 		//TODO: Segregate the pairs into p1 and p2 and into frames
+		/*
 		if p1_frame < 10 {
 			println!("{}\t{:?}",pair1.id(), p1_frame_con[p1_frame]);
 		}
@@ -162,13 +174,14 @@ fn main() {
 		else{
 			println!("{}\t[]",pair2.id());
 		}
-
+		*/
 		//println!("{}",pair1.id());
 		//println!("{}",pair2.id());
 	} 
 
 	//println!("Count: {}", count);
 
+	/*
 	let elapsed_query = start_query.elapsed();
 	//println!("{:?}", read_alignments);
 	let elapsed = start.elapsed();
@@ -177,4 +190,16 @@ fn main() {
 		println!("Query: {:?}", elapsed_query);
 		println!("Ref: {:?}", elapsed_ref);
 	}
+	*/
+	
+    let f = File::create(output_file).expect("unable to create output file");
+    let mut f = BufWriter::new(f);
+
+	// Add Headers
+	
+	write!(f,"Name\tNumReads\n").expect("unable to write");
+
+	for (key, value) in &out {
+        write!(f,"{}\t{}\n", key, value).expect("unable to write");
+    }
 }
