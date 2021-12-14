@@ -37,7 +37,7 @@ The binary of the reference section will be found in the release folder:
 ```
 $ cd target/release 
 ```
-### 1.4. Alignment
+## 1.4. Alignment
 The pseudo alignment section of the project can be found in the alignment folder: 
 ```
 $ cd alignr
@@ -45,7 +45,7 @@ $ cd alignr
 ### 1.4.1. Compiling the Binary
 Similar to the Reference section, the compilation of the binary is the same.
 
-Once in the reference folder, the reference section can now be compiled into a binary file. 
+Once in the alignr folder, the reference section can now be compiled into a binary file. 
 To compile the reference section use:
 ```
 $ cargo build --release
