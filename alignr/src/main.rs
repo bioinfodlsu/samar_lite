@@ -90,6 +90,22 @@ fn main() {
 								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,4),
 								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,5),
 								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,6)];
+		/*
+			Maybe we could do something like this for readability:
+
+			let mut p1_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,1)];
+			// automatically binds it to a Vec<Vec<String,f64>> type
+			p1_frame_con.push(alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,2));
+			p1_frame_con.push(alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,3));
+			:: ::
+
+			We use the push method of a Vec object. 
+			But I'm still not sure how it will affect the speed.
+			
+			For reference:
+			push() - https://doc.rust-lang.org/src/alloc/vec/mod.rs.html#1693
+			vec! - https://doc.rust-lang.org/src/alloc/macros.rs.html#41-51
+		*/
 		
 		// if bench{
 		// 	println!("Frame1: {:?}",frame1_time.elapsed());
