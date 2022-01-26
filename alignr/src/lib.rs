@@ -1,5 +1,4 @@
 use std::collections::{HashMap,HashSet};
-use std::time::Instant;
 use std::str;
 
 pub fn best_in_pair(p1: &Vec<Vec<(String,f64)>>, p2: &Vec<Vec<(String,f64)>>, frame1: usize, frame2: usize) -> String{
@@ -124,12 +123,30 @@ pub fn b_search_mmp(s: &[u8], sa: &[usize], pat: &[u8], beg: usize, end: usize) 
 	(i,j-1)
 }
 
+fn reduce_alph(seq:String) -> String{
+	seq.chars()
+        .map(|x| match x {
+            'R' => 'K',
+			'E' => 'K',
+			'D' => 'K',
+			'Q' => 'K',
+			'N' => 'K',
+			'L' => 'I',
+			'V' => 'I',
+			'T' => 'S',
+			'A' => 'S',
+            _ => x,
+        })
+        .collect()
+}
 
 // ToDo fix variable names, Match K to the reference index,argparse for threshold
-pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<String,(u64,u64)>, bench: bool,kmer:usize, threshold: f64,  frame:u64) -> Vec<(String,f64)>{
+pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<String,(u64,u64)>, bench: bool,kmer:usize, threshold: f64,  frame:u64) -> Vec<(String,f64)>{
 	let mut trans: Vec<(String,f64)> = Vec::new();
 	let mut cov_consensus: HashMap<String,f64> = HashMap::new(); 
 	let mut x = 0;
+	let almost_read = pre_read;
+	let read = almost_read.as_bytes();
 	let seqlen = read.len();
 	// let align_time = Instant::now();
 	// let kmer_time = Instant::now();
@@ -246,7 +263,6 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 		//else {
 	if !cov_consensus.is_empty(){
 		//println!{"Consensus: {:?}", cov_consensus};
-		let consensus_time = Instant::now();
 		for (transcript, coverage) in cov_consensus.iter() {
 			//println!("Transcript {}: Coverage {}",transcript,coverage);
 			let cov = *coverage / seqlen as f64 * 100.0;
@@ -256,9 +272,6 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 			}
 		}
 		
-		if bench{
-			println!("Consensus: {:?}",consensus_time.elapsed());
-		}
 	}
 		//}
 		/* Using Mode
