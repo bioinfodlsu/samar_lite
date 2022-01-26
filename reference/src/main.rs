@@ -12,12 +12,13 @@ use bio::alphabets;
 use bio::data_structures::suffix_array::suffix_array;
 use argparse::{ArgumentParser, StoreTrue, Store};
 
+// Reference structure
 #[derive(Serialize)]
 struct Ref {
     cat_str: String,
     //qgram: qgram_index::QGramIndex,
 	suff_arry: Vec<usize>,
-    	rank_select: RankSelect,
+    rank_select: RankSelect,
 	ref_names: HashMap<u64,String>,
 	hash_table: HashMap<String,(u64,u64)>,
 	k: usize
@@ -27,8 +28,11 @@ fn main() {
 	/*To Do: 
 		Add ArgParse to Input the reference
 	*/
+
+	// Default values for reference file path and k-mer size
 	let mut ref_path = String::from("ref.fasta");
 	let mut k:usize = 5;
+
 	{ // this block limits scope of borrows by ap.refer() method
 		let mut ap = ArgumentParser::new();
 		ap.set_description("Reference Creator for Samar-lite");
@@ -36,18 +40,26 @@ fn main() {
 		ap.refer(&mut k).add_argument("kmer", Store,"Kmer for alignment");
 		ap.parse_args_or_exit();
 	}
+	/*
+		COMMENT FOR ^^:
+		It doesn't have an arguement parser for the
+		path to output of the json file containing
+		the suffix array. Instead the name of the file
+		and its path (./) are directly passed as a string
+		literal on line 122 (serde_json::to_writer() function call)
+	*/
 
 	let path_r = Path::new(&ref_path);
-    	let reader = fasta::Reader::from_file(path_r).expect("File not found");
+    let reader = fasta::Reader::from_file(path_r).expect("File not found");
 
 	let mut ref_names: HashMap<u64,String> = HashMap::new();
 	let mut cat_str = String::new();
 	let mut rank_bitvec: BitVec<u8> = BitVec::new();
 	
-	let q = 5 as u32;
+	let q = 5 as u32; // unused variables q and alph
 	let alph = Alphabet::new(&b"ABCDEFGHIJKLMNOPQRSTUVWXYZ$*abcdefghijklmnopqrstuvwxyz"[..]);
 
-	//Creates Concatenated string and Rank Bit Vector and Rank Names Map
+	// Creates Concatenated string and Rank Bit Vector and Rank Names Map
 	let mut nb_reads = 0;
 
 	for result in reader.records() {
@@ -67,7 +79,7 @@ fn main() {
 
 	let suff_arry = suffix_array(&cat_str.as_bytes());
 	
-	//Kmer to Suffix Array Interval Hash Table Construction
+	// K-mer to Suffix Array Interval Hash Table Construction
 
 	let n = cat_str.len();
 	let mut hash_table: HashMap<String,(u64,u64)> = HashMap::new();
@@ -108,6 +120,7 @@ fn main() {
 	};
 	
 	serde_json::to_writer(&File::create("data_suffarry.json").unwrap(), &test);
+	// ^ Maybe wrap in a try-catch block for safety since it returns a Result type.
 	
 	println!("Done");
 }
