@@ -1,5 +1,6 @@
 use std::collections::{HashMap,HashSet};
 use std::str;
+use twox_hash::xxh3::hash64;
 
 pub fn best_in_pair(p1: &Vec<Vec<(String,f64)>>, p2: &Vec<Vec<(String,f64)>>, frame1: usize, frame2: usize) -> String{
 	let mut intersection: Vec<(String,f64)> = Vec::new();
@@ -141,7 +142,7 @@ fn reduce_alph(seq:String) -> String{
 }
 
 // ToDo fix variable names, Match K to the reference index,argparse for threshold
-pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<String,(u64,u64)>, bench: bool,kmer:usize, threshold: f64,  frame:u64) -> Vec<(String,f64)>{
+pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<u64,(u64,u64)>, bench: bool,kmer:usize, threshold: f64,  frame:u64) -> Vec<(String,f64)>{
 	let mut trans: Vec<(String,f64)> = Vec::new();
 	let mut cov_consensus: HashMap<String,f64> = HashMap::new(); 
 	let mut x = 0;
@@ -157,18 +158,33 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &b
 		// Go through suffix array and find a beg and end interval
 		//let initial_bs = Instant::now();
 		//let (beg,end) = b_search(cat_str, &suff_arry, read_k);
-		let str_read_k = str::from_utf8(read_k).unwrap();
 
 		//println!("{}",str_read_k);
 		//println!("{:?}", hash_table.keys());
-		let (beg,end) = if hash_table.contains_key(str_read_k){
-			hash_table.get(str_read_k).unwrap().clone()
+		let (beg,end) = if hash_table.contains_key(&hash64(&read_k)){
+			let hash_k = &hash64(read_k);
+			let mut sa_interval = hash_table.get(hash_k).unwrap().clone();
+			let mut collision = 0;
+			let mut hash_string = &cat_str[(suff_arry[sa_interval.0 as usize] as usize)..(suff_arry[sa_interval.0 as usize] as usize)+ kmer];
+			
+			//println!("INITIAL {}={}",str::from_utf8(read_k).unwrap(),str::from_utf8(hash_string).unwrap());
+			while read_k != hash_string{
+				//println!("IN LOOP {}={}",str::from_utf8(read_k).unwrap(),str::from_utf8(hash_string).unwrap());
+			
+				collision += 1;
+				sa_interval = hash_table.get(&(hash_k + collision)).unwrap().clone();
+				hash_string = &cat_str[(suff_arry[sa_interval.0 as usize] as usize)..(suff_arry[sa_interval.0 as usize] as usize)+ kmer];
+			}
+			// if collision != 0{
+			// 	println!("{}",collision);
+			// 	println!("IN LOOP {}={}",str::from_utf8(read_k).unwrap(),str::from_utf8(hash_string).unwrap());
+			// }
+			
+			hash_table.get(&(hash_k + collision)).unwrap().clone()
 		}
 		else {
 			(1,0)
 		};
-
-		//println!("{:?} {:?}", beg, end);
 		// if bench{
 		// 	println!("InitialBS: {:?}", initial_bs.elapsed());
 		// }

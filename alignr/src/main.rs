@@ -16,15 +16,15 @@ struct Ref {
     suff_arry: Vec<usize>,
     rank_select: RankSelect,
 	ref_names: HashMap<u64,String>,
-	hash_table: HashMap<String, (u64,u64)>,
+	hash_table: HashMap<u64, (u64,u64)>,
 	k: usize
 }
 
 fn main() {
-	let mut ref_file = String::from("test/data_suffarry_7.json");
-	let mut query_file = String::from("data/sample_01_10000_interleaved.fastq");
-	let mut output_file = String::from("output.counts");
-	let mut aligns_file = String::from("output.aligns");
+	let mut ref_file = String::from("data_suffarry.json");
+	let mut query_file = String::from("sample_01_300000_interleaved.fastq");
+	let mut output_file = String::from("output");
+	let mut aligns_file = String::from("output");
 
 	let mut threshold:f64 = 30.0;
 	let mut bench = false;
@@ -46,6 +46,7 @@ fn main() {
 	//For Reference
 	// let start_ref = Instant::now();
 	//TODO: PASS JSON LOCATION AND FILENAME FROM REFERENCe
+	println!("BEGINNING IMPORT OF REF");
 	let file = File::open(ref_file).unwrap();
     let reader = BufReader::new(file);
 
@@ -75,12 +76,16 @@ fn main() {
 	let hash_table = ref_struct.hash_table;
 	let k = ref_struct.k;
 
+	println!("DONE IMPORTING REF");
+
 	let mut out: HashMap<String,u64> = HashMap::new();	
 	aligns_file.push_str(&k.to_string());
 	aligns_file.push_str(&threshold.to_string());
+	aligns_file.push_str(".align");
 	let aligns = File::create(aligns_file).expect("unable to create output file");
     let mut b_aligns = BufWriter::new(aligns);
 
+	println!("BEGINNING QUASI-MAPPING");
     while let (Some(Ok(pair1)),Some(Ok(pair2))) = (records.next(),records.next()){
 		//println!("HERE IS READ: {} {}", pair1.id(),pair2.id());
 		//println!("HERE IS READ: pair1{:?}\n pair2{:?}", pair1.seq(),pair2.seq());
@@ -88,29 +93,12 @@ fn main() {
 
 		//Vector of 6 vectors, each element is a vector of tuples the gene name and the coverage 
 		//println!("HERE IS READ1: {}",pair1.id());
-
-		let p1_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,1),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,2),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,3),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,4),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,5),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,6)];
-		/*
-			Maybe we could do something like this for readability:
-
-			let mut p1_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,1)];
-			// automatically binds it to a Vec<Vec<String,f64>> type
-			p1_frame_con.push(alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[1..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,2));
-			p1_frame_con.push(alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[2..]).as_bytes(), &rank_select, &ref_names, &hash_table,bench,k,threshold,3));
-			:: ::
-
-			We use the push method of a Vec object. 
-			But I'm still not sure how it will affect the speed.
-			
-			For reference:
-			push() - https://doc.rust-lang.org/src/alloc/vec/mod.rs.html#1693
-			vec! - https://doc.rust-lang.org/src/alloc/macros.rs.html#41-51
-		*/
+		let p1_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()), &rank_select, &ref_names, &hash_table,bench,k,threshold,1),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[1..]), &rank_select, &ref_names, &hash_table,bench,k,threshold,2),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[2..]), &rank_select, &ref_names, &hash_table,bench,k,threshold,3),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())), &rank_select, &ref_names, &hash_table,bench,k,threshold,4),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[1..]), &rank_select, &ref_names, &hash_table,bench,k,threshold,5),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[2..]), &rank_select, &ref_names, &hash_table,bench,k,threshold,6)];
 		
 		// if bench{
 		// 	println!("Frame1: {:?}",frame1_time.elapsed());
@@ -208,6 +196,7 @@ fn main() {
 	*/
 	output_file.push_str(&k.to_string());
 	output_file.push_str(&threshold.to_string());
+	output_file.push_str(".count");
     let f = File::create(output_file).expect("unable to create output file");
     let mut f = BufWriter::new(f);
 
