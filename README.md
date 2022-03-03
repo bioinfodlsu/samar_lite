@@ -1,6 +1,3 @@
-Add Rust
-
-
 # 1. Software Requirements and Setup 
 C++ Build Tools and Rust are required for this project. All other dependencies will be handled by rust. 
 
