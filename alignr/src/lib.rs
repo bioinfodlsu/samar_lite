@@ -36,15 +36,22 @@ pub fn best_in_pair(p1: &Vec<Vec<(String,f64)>>, p2: &Vec<Vec<(String,f64)>>, fr
 	}
 }
 
-pub fn best_in_frame_max(frames: &Vec<Vec<(String,f64)>>) -> usize{
-	let mut best = 10;
+pub fn best_in_frame_max(frames: &Vec<Vec<(String,f64)>>) -> HashSet<String>{
+	let mut best = HashSet::new();
 	let mut max = 0.0;
 
-	for (i,info) in frames.iter().enumerate(){
+	for (_i,info) in frames.iter().enumerate(){
 		for j in info.iter(){
 			if j.1 > max{
 				max = j.1;
-				best = i;
+			}
+		}
+	}
+
+	for (_i,info) in frames.iter().enumerate(){
+		for j in info.iter(){
+			if j.1 == max{
+				best.insert(j.0.clone());
 			}
 		}
 	}
@@ -142,11 +149,11 @@ fn reduce_alph(seq:String) -> String{
 }
 
 // ToDo fix variable names, Match K to the reference index,argparse for threshold
-pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<u64,(u64,u64)>, bench: bool,kmer:usize, threshold: f64,  frame:u64) -> Vec<(String,f64)>{
-	let mut trans: Vec<(String,f64)> = Vec::new();
+pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<u64,(u64,u64)>,kmer:usize, threshold: f64,  red:bool) -> Vec<(String,f64)>{
+	let mut pros: Vec<(String,f64)> = Vec::new();
 	let mut cov_consensus: HashMap<String,f64> = HashMap::new(); 
 	let mut x = 0;
-	let almost_read = pre_read;
+	let almost_read = if red {reduce_alph(pre_read)} else {pre_read};
 	let read = almost_read.as_bytes();
 	let seqlen = read.len();
 	// let align_time = Instant::now();
@@ -167,18 +174,15 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &b
 			let mut collision = 0;
 			let mut hash_string = &cat_str[(suff_arry[sa_interval.0 as usize] as usize)..(suff_arry[sa_interval.0 as usize] as usize)+ kmer];
 			
-			//println!("INITIAL {}={}",str::from_utf8(read_k).unwrap(),str::from_utf8(hash_string).unwrap());
 			while read_k != hash_string{
-				//println!("IN LOOP {}={}",str::from_utf8(read_k).unwrap(),str::from_utf8(hash_string).unwrap());
-			
 				collision += 1;
 				sa_interval = hash_table.get(&(hash_k + collision)).unwrap().clone();
 				hash_string = &cat_str[(suff_arry[sa_interval.0 as usize] as usize)..(suff_arry[sa_interval.0 as usize] as usize)+ kmer];
 			}
-			// if collision != 0{
-			// 	println!("{}",collision);
-			// 	println!("IN LOOP {}={}",str::from_utf8(read_k).unwrap(),str::from_utf8(hash_string).unwrap());
-			// }
+			if collision != 0{
+				println!("{}",collision);
+				println!("IN LOOP {}={}",str::from_utf8(read_k).unwrap(),str::from_utf8(hash_string).unwrap());
+			}
 			
 			hash_table.get(&(hash_k + collision)).unwrap().clone()
 		}
@@ -203,7 +207,7 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &b
 			let mut ref_pro: HashSet<String> = HashSet::new();
 
 			while !done{
-				if (x+kmer+mmp+1) < read.len() {
+				if (x+kmer+mmp+1) < seqlen {
 					let temp_read = &read[x..(x+kmer+mmp)];
 					let (temp_beg,temp_end) = b_search_mmp(cat_str, &suff_arry, temp_read,beg_p as usize,(end_p + 1) as usize);
 					
@@ -235,12 +239,7 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &b
 				//mode_consensus.push(rs_maybe.rank(suff_arry[x] as u64).unwrap());
 				//if x >= beg_p as u64 && x <= end_p as u64{
 				ref_pro.insert(ref_names[&rs_maybe.rank(suff_arry[x as usize]as u64).unwrap()].clone());
-				/*
-				}
-				else
-					*cov_consensus.entry(ref_names[&rs_maybe.rank(suff_arry[x as usize]as u64).unwrap()].clone()).or_insert(0.0) += (kmer) as f64 / seqlen as f64 * 100.0;
-				}
-				*/
+
 			}
 			//println!("Refs {:?}",ref_pro);
 			// if bench{
@@ -249,8 +248,7 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &b
 			for refs in ref_pro{
 				*cov_consensus.entry(refs).or_insert(0.0) += (kmer + mmp) as f64;
 			}
-		}	
-		if mmp > 0{
+
 			x += kmer + mmp;
 		}
 		else{
@@ -279,12 +277,12 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &b
 		//else {
 	if !cov_consensus.is_empty(){
 		//println!{"Consensus: {:?}", cov_consensus};
-		for (transcript, coverage) in cov_consensus.iter() {
+		for (pro, coverage) in cov_consensus.iter() {
 			//println!("Transcript {}: Coverage {}",transcript,coverage);
-			let cov = *coverage / seqlen as f64 * 100.0;
+			let cov = coverage / seqlen as f64 * 100.0;
 			//println!("Overall {}", cov);
 			if cov > threshold {
-				trans.push((transcript.clone(),cov));
+				pros.push((pro.clone(),cov));
 			}
 		}
 		
@@ -298,5 +296,6 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &b
 	// if bench{
 	// 	println!("AlignTime: {:?}", align_time.elapsed());
 	// }
-	trans
+	return pros;
 }
+

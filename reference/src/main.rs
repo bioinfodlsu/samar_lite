@@ -8,7 +8,7 @@ use bv::BitVec;
 use bio::data_structures::rank_select::RankSelect;
 use bio::alphabets::Alphabet;
 use bio::data_structures::suffix_array::suffix_array;
-use argparse::{ArgumentParser, Store};
+use argparse::{ArgumentParser, Store, StoreTrue};
 use std::hash::BuildHasherDefault;
 use twox_hash::xxh3::hash64;
 
@@ -20,8 +20,26 @@ struct Ref {
     rank_select: RankSelect,
 	ref_names: HashMap<u64,String>,
 	hash_table: HashMap<u64, (u64,u64)>,
-	k: usize
+	k: usize,
+	reduced: bool
 }
+
+fn reduce_alph(seq:String) -> String{
+	seq.chars().map(|x| match x {
+		'R' => 'K',
+		'E' => 'K',
+		'D' => 'K',
+		'Q' => 'K',
+		'N' => 'K',
+		'L' => 'I',
+		'V' => 'I',
+		'T' => 'S',
+		'A' => 'S',
+		_ => x,
+	})
+	.collect()
+}
+
 
 fn main() {
 	/*To Do: 
@@ -29,15 +47,17 @@ fn main() {
 	*/
 	let mut ref_path = String::from("ref.fasta");
 	let mut k:usize = 5;
+	let mut reduced = false;
 	{ // this block limits scope of borrows by ap.refer() method
 	let mut ap = ArgumentParser::new();
 	ap.set_description("Reference Creator for Samar-lite");
-	ap.refer(&mut ref_path)
-	.add_argument("Reference", Store,
-	"Reference Fasta File");
+	ap.refer(&mut ref_path).add_argument("Reference", Store,"Reference Fasta File");
 	ap.refer(&mut k)
 	.add_argument("kmer", Store,
 	"Kmer for alignment");
+	ap.refer(&mut reduced)
+	.add_option(&["-r", "--reduced"], StoreTrue,
+	"Utilize a reduced alphabet");
 	ap.parse_args_or_exit();
 	}
 
@@ -46,6 +66,10 @@ fn main() {
 	let mut ref_names: HashMap<u64,String> = HashMap::new();
 	let mut cat_str = String::new();
 	let mut rank_bitvec: BitVec<u8> = BitVec::new();
+	
+	if reduced{
+		println!("Using Reduced Alph");	
+	}
 
 	//Creates Concatenated string and Rank Bit Vector and Rank Names Map
 	let mut nb_reads = 0;
@@ -53,7 +77,12 @@ fn main() {
 	for result in reader.records() {
 		let record = result.expect("Error during fasta record parsing");
 		
-		cat_str.push_str(str::from_utf8(record.seq()).expect("Error during fasta record parsing"));
+		if reduced{
+			cat_str.push_str(&reduce_alph(String::from_utf8_lossy(record.seq()).into_owned()));
+		}
+		else {
+			cat_str.push_str(str::from_utf8(record.seq()).expect("Error during fasta record parsing"));
+		}
 		cat_str.push_str("$");
 		
 		for _x in 0..record.seq().len(){
@@ -97,6 +126,7 @@ fn main() {
 				while hash_table.contains_key(&j){
 					j+=1; 
 				}
+				
 				left = x as u64;
 			}
 		}
@@ -112,7 +142,8 @@ fn main() {
 		rank_select,
 		ref_names,
 		hash_table,
-		k
+		k,
+		reduced
 	};
 	
 	let mut file = String::from("ref_index_");
