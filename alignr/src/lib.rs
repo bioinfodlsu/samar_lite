@@ -1,6 +1,6 @@
 use std::collections::{HashMap,HashSet};
-use std::time::Instant;
 use std::str;
+use twox_hash::xxh3::hash64;
 
 pub fn best_in_pair(p1: &Vec<Vec<(String,f64)>>, p2: &Vec<Vec<(String,f64)>>, frame1: usize, frame2: usize) -> String{
 	let mut intersection: Vec<(String,f64)> = Vec::new();
@@ -36,15 +36,22 @@ pub fn best_in_pair(p1: &Vec<Vec<(String,f64)>>, p2: &Vec<Vec<(String,f64)>>, fr
 	}
 }
 
-pub fn best_in_frame_max(frames: &Vec<Vec<(String,f64)>>) -> usize{
-	let mut best = 10;
+pub fn best_in_frame_max(frames: &Vec<Vec<(String,f64)>>) -> HashSet<String>{
+	let mut best = HashSet::new();
 	let mut max = 0.0;
 
-	for (i,info) in frames.iter().enumerate(){
+	for (_i,info) in frames.iter().enumerate(){
 		for j in info.iter(){
 			if j.1 > max{
 				max = j.1;
-				best = i;
+			}
+		}
+	}
+
+	for (_i,info) in frames.iter().enumerate(){
+		for j in info.iter(){
+			if j.1 == max{
+				best.insert(j.0.clone());
 			}
 		}
 	}
@@ -124,12 +131,30 @@ pub fn b_search_mmp(s: &[u8], sa: &[usize], pat: &[u8], beg: usize, end: usize) 
 	(i,j-1)
 }
 
+fn reduce_alph(seq:String) -> String{
+	seq.chars()
+        .map(|x| match x {
+            'R' => 'K',
+			'E' => 'K',
+			'D' => 'K',
+			'Q' => 'K',
+			'N' => 'K',
+			'L' => 'I',
+			'V' => 'I',
+			'T' => 'S',
+			'A' => 'S',
+            _ => x,
+        })
+        .collect()
+}
 
 // ToDo fix variable names, Match K to the reference index,argparse for threshold
-pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<String,(u64,u64)>, bench: bool,kmer:usize, threshold: f64,  frame:u64) -> Vec<(String,f64)>{
-	let mut trans: Vec<(String,f64)> = Vec::new();
+pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<u64,(u64,u64)>,kmer:usize, threshold: f64,  red:bool) -> Vec<(String,f64)>{
+	let mut pros: Vec<(String,f64)> = Vec::new();
 	let mut cov_consensus: HashMap<String,f64> = HashMap::new(); 
 	let mut x = 0;
+	let almost_read = if red {reduce_alph(pre_read)} else {pre_read};
+	let read = almost_read.as_bytes();
 	let seqlen = read.len();
 	// let align_time = Instant::now();
 	// let kmer_time = Instant::now();
@@ -140,18 +165,30 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 		// Go through suffix array and find a beg and end interval
 		//let initial_bs = Instant::now();
 		//let (beg,end) = b_search(cat_str, &suff_arry, read_k);
-		let str_read_k = str::from_utf8(read_k).unwrap();
 
 		//println!("{}",str_read_k);
 		//println!("{:?}", hash_table.keys());
-		let (beg,end) = if hash_table.contains_key(str_read_k){
-			hash_table.get(str_read_k).unwrap().clone()
+		let (beg,end) = if hash_table.contains_key(&hash64(&read_k)){
+			let hash_k = &hash64(read_k);
+			let mut sa_interval = hash_table.get(hash_k).unwrap().clone();
+			let mut collision = 0;
+			let mut hash_string = &cat_str[(suff_arry[sa_interval.0 as usize] as usize)..(suff_arry[sa_interval.0 as usize] as usize)+ kmer];
+			
+			while read_k != hash_string{
+				collision += 1;
+				sa_interval = hash_table.get(&(hash_k + collision)).unwrap().clone();
+				hash_string = &cat_str[(suff_arry[sa_interval.0 as usize] as usize)..(suff_arry[sa_interval.0 as usize] as usize)+ kmer];
+			}
+			if collision != 0{
+				println!("{}",collision);
+				println!("IN LOOP {}={}",str::from_utf8(read_k).unwrap(),str::from_utf8(hash_string).unwrap());
+			}
+			
+			hash_table.get(&(hash_k + collision)).unwrap().clone()
 		}
 		else {
 			(1,0)
 		};
-
-		//println!("{:?} {:?}", beg, end);
 		// if bench{
 		// 	println!("InitialBS: {:?}", initial_bs.elapsed());
 		// }
@@ -170,7 +207,7 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 			let mut ref_pro: HashSet<String> = HashSet::new();
 
 			while !done{
-				if (x+kmer+mmp+1) < read.len() {
+				if (x+kmer+mmp+1) < seqlen {
 					let temp_read = &read[x..(x+kmer+mmp)];
 					let (temp_beg,temp_end) = b_search_mmp(cat_str, &suff_arry, temp_read,beg_p as usize,(end_p + 1) as usize);
 					
@@ -202,12 +239,7 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 				//mode_consensus.push(rs_maybe.rank(suff_arry[x] as u64).unwrap());
 				//if x >= beg_p as u64 && x <= end_p as u64{
 				ref_pro.insert(ref_names[&rs_maybe.rank(suff_arry[x as usize]as u64).unwrap()].clone());
-				/*
-				}
-				else
-					*cov_consensus.entry(ref_names[&rs_maybe.rank(suff_arry[x as usize]as u64).unwrap()].clone()).or_insert(0.0) += (kmer) as f64 / seqlen as f64 * 100.0;
-				}
-				*/
+
 			}
 			//println!("Refs {:?}",ref_pro);
 			// if bench{
@@ -216,8 +248,7 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 			for refs in ref_pro{
 				*cov_consensus.entry(refs).or_insert(0.0) += (kmer + mmp) as f64;
 			}
-		}	
-		if mmp > 0{
+
 			x += kmer + mmp;
 		}
 		else{
@@ -246,19 +277,15 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 		//else {
 	if !cov_consensus.is_empty(){
 		//println!{"Consensus: {:?}", cov_consensus};
-		let consensus_time = Instant::now();
-		for (transcript, coverage) in cov_consensus.iter() {
+		for (pro, coverage) in cov_consensus.iter() {
 			//println!("Transcript {}: Coverage {}",transcript,coverage);
-			let cov = *coverage / seqlen as f64 * 100.0;
+			let cov = coverage / seqlen as f64 * 100.0;
 			//println!("Overall {}", cov);
 			if cov > threshold {
-				trans.push((transcript.clone(),cov));
+				pros.push((pro.clone(),cov));
 			}
 		}
 		
-		if bench{
-			println!("Consensus: {:?}",consensus_time.elapsed());
-		}
 	}
 		//}
 		/* Using Mode
@@ -269,5 +296,6 @@ pub fn palign(cat_str: &[u8], suff_arry: &[usize], read:&[u8], rs_maybe: &bio::d
 	// if bench{
 	// 	println!("AlignTime: {:?}", align_time.elapsed());
 	// }
-	trans
+	return pros;
 }
+
