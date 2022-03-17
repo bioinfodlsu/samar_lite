@@ -16,7 +16,7 @@ echo +++
 echo +++ CREATING `bin` DIRECTORY...
 if exist bin (echo +++ `bin` directory already exists) else (md bin)
 
-:: For placing the executbles in the bin directory
+:: For placing the executables in the bin directory
 echo +++ COPYING REFERENCE EXECUTBLE TO `bin` DIRECTORY
 if exist bin\*.exe (del bin\*.exe && copy reference\target\release\ref-align.exe bin) else (copy reference\target\release\ref-align.exe bin)
 echo +++ COPYING ALIGNR EXECUTBLE TO `bin` DIRECTORY
