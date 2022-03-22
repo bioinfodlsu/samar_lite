@@ -16,45 +16,19 @@ $ git clone https://bitbucket.org/project_samar/samar_lite.git
 $ cd samar_lite
 ```
 
-## 1.3. Reference
-The reference section of samar_lite can be found in the reference folder: 
-
+## 1.3. Compiling the Binaries
+In the `samar-lite` folder, run the `make` command.
 ```
-$ cd reference
+$ make
 ```
-
-### 1.3.1. Compiling the Binary
-Once in the reference folder, the reference section can now be compiled into a binary file. 
-To compile the reference section use:
-```
-$ cargo build --release
-```
-A new folder will appear called "target". Further in that folder is a new folder called "release". 
-The binary of the reference section will be found in the release folder: 
-```
-$ cd target/release 
-```
-## 1.4. Alignment
-The pseudo alignment section of the project can be found in the alignment folder: 
-```
-$ cd alignr
-```
-### 1.4.1. Compiling the Binary
-Similar to the Reference section, the compilation of the binary is the same.
-
-Once in the alignr folder, the reference section can now be compiled into a binary file. 
-To compile the reference section use:
-```
-$ cargo build --release
-```
-A new folder will appear called "target". Further in that folder is a new folder called "release". 
-The binary of the reference section will be found in the release folder: 
-```
-$ cd target/release 
-```
+This will automatically compile the binaries of the `reference` and `alignr` folders.
+After compilation, the binaries will be placed inside the `bin` folder.
 
 # 2. Running Project
-The project is separated into 2 sections: A reference section and a pseudo alignment section. 
+From the `samar-lite` folder, go to the `bin` folder.
+```
+$ cd bin
+```
 
 ## 2.1. Reference Generation
 First the reference will be generated. 
@@ -62,12 +36,7 @@ Note that the input files for the reference section is:
 - protein reference fasta file
 
 ### 2.1.1. Running the Reference Binary 
-From the Reference folder, enter the location of the binary: 
-```
-$ cd target/release
-```
-
-Once inside the release folder, run this command: 
+To generate the reference, run this command: 
 ```
 $ ./ref-align <path-to-reference>.fasta <path-to-output>.json <kmer size>
 ```
@@ -80,12 +49,7 @@ Note that the input files for the pseudo alignment section are:
 - interleaved DNA fastq query file 
 
 ### 2.1.1. Running the Reference Binary 
-From the alignr folder, enter the location of the binary: 
-```
-$ cd target/release
-```
-
-Once inside the release folder, run this command: 
+To generate the Pseudo Alignments, run this command: 
 ```
 $ ./alignr <path-to-reference>.json <path-to-query>.fastq <threshold of coverage> > <path-to-desired-output>.txt
 ```
