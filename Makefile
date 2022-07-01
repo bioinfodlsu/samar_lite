@@ -21,8 +21,8 @@ bin_file:
 	@echo +++ CREATING bin DIRECTORY...
 	@mkdir bin
 	@echo +++ COPYING REFERENCE EXECUTBLE TO bin DIRECTORY
-	@cp ./reference/target/release/ref-align.exe ./bin
+	@cp ./reference/target/release/ref-align ./bin
 	@echo +++ COPYING ALIGNR EXECUTBLE TO bin DIRECTORY
-	@cp ./alignr/target/release/alignr.exe ./bin
+	@cp ./alignr/target/release/alignr ./bin
 	@echo +++ DONE INITIALIZING bin DIRECTORY
 	@echo +++
