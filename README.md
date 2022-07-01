@@ -1,13 +1,33 @@
-# 1. Software Requirements and Setup 
-C++ Build Tools and Rust are required for this project. All other dependencies will be handled by rust. 
+# 1. Installation
 
-## 1.1. Install Rust 
+C++ Build Tools and Rust are required for this project. 
+All other dependencies will be handled by rust. 
 
-Download Rust [here](https://www.rust-lang.org/).
+## 1.1. Install  Rust
+
+### 1.1.1 Using Conda
+This is probably the most painless way to install Rust. 
+
+```
+conda create --name rust
+conda activate rust
+conda install -c conda-forge rust
+```
+Test Rust by running:
+```
+$ cargo
+```
+
+### 1.1.2 As recommended by Rust:
+Or you can install Rust directly:
+```
+$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
 After completing the rust installation, test Rust by running:
 ```
 $ cargo
 ```
+
 
 ## 1.2. Download/clone this repository
 
