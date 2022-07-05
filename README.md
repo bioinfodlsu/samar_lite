@@ -1,10 +1,6 @@
 # 1. Installation
 
-C++ Build Tools and Rust are required for this project. 
-All other dependencies will be handled by rust. 
-
-## 1.1. Install  Rust
-
+## 1.1. Install  Rust 
 ### 1.1.1 Using Conda
 This is probably the most painless way to install Rust. 
 
