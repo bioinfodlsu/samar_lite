@@ -17,14 +17,12 @@ struct Ref {
     rank_select: RankSelect,
 	ref_names: HashMap<u64,String>,
 	hash_table: HashMap<u64, (u64,u64)>,
-	k: usize,
-	reduced: bool
+	k: usize
 }
 
 fn main() {
 	let mut ref_file = String::from("ref_index_7.json");
 	let mut query_file = String::from("sample_01_300000_interleaved.fastq");
-	let mut output_file = String::from("output");
 	let mut aligns_file = String::from("output");
 
 	let mut threshold:f64 = 30.0;
@@ -36,7 +34,6 @@ fn main() {
 		ap.refer(&mut query_file).add_argument("Query Sequence", Store, "Query Interleaved Fastq file");
 		ap.refer(&mut threshold).add_argument("Threshold", Store, "Coverage threshold (Must be Floating Point)");
 		ap.refer(&mut aligns_file).add_argument("Alignment File", Store, "Output alignments of samar_lite");
-		ap.refer(&mut output_file).add_argument("Count File", Store, "Output counts of samar_lite");
 		
 		ap.parse_args_or_exit();
 	}
@@ -63,14 +60,9 @@ fn main() {
 	let ref_names = ref_struct.ref_names;
 	let hash_table = ref_struct.hash_table;
 	let k = ref_struct.k;
-	let red = ref_struct.reduced;
 
 	println!("DONE IMPORTING REF");
 
-	let out: HashMap<String,u64> = HashMap::new();	
-	aligns_file.push_str(&k.to_string());
-	aligns_file.push_str(&threshold.to_string());
-	aligns_file.push_str(".align");
 	let aligns = File::create(aligns_file).expect("unable to create output file");
     let mut b_aligns = BufWriter::new(aligns);
 
@@ -82,12 +74,12 @@ fn main() {
 
 		//Vector of 6 vectors, each element is a vector of tuples the gene name and the coverage 
 		//println!("HERE IS READ1: {}",pair1.id());
-		let p1_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()), &rank_select, &ref_names, &hash_table,k,threshold,red),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[1..]), &rank_select, &ref_names, &hash_table,k,threshold,red),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[2..]), &rank_select, &ref_names, &hash_table,k,threshold,red),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())), &rank_select, &ref_names, &hash_table,k,threshold,red),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[1..]), &rank_select, &ref_names, &hash_table,k,threshold,red),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[2..]), &rank_select, &ref_names, &hash_table,k,threshold,red)];
+		let p1_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()), &rank_select, &ref_names, &hash_table,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[1..]), &rank_select, &ref_names, &hash_table,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair1.seq()[2..]), &rank_select, &ref_names, &hash_table,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())), &rank_select, &ref_names, &hash_table,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[1..]), &rank_select, &ref_names, &hash_table,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair1.seq())[2..]), &rank_select, &ref_names, &hash_table,k,threshold)];
 		
 		// if bench{
 		// 	println!("Frame1: {:?}",frame1_time.elapsed());
@@ -95,12 +87,12 @@ fn main() {
 		//println!("FRAME1 CON \n{:?}",p1_frame_con);
 		//let frame2_time = Instant::now();
 		//println!("HERE IS READ2: {}",pair2.id());
-		let p2_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()), &rank_select, &ref_names, &hash_table,k,threshold,red),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[1..]), &rank_select, &ref_names, &hash_table,k,threshold,red),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[2..]), &rank_select, &ref_names, &hash_table,k,threshold,red),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) ), &rank_select, &ref_names, &hash_table,k,threshold,red),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) [1..]), &rank_select, &ref_names, &hash_table,k,threshold,red),
-								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) [2..]), &rank_select, &ref_names, &hash_table,k,threshold,red)];
+		let p2_frame_con = vec![alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()), &rank_select, &ref_names, &hash_table,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[1..]), &rank_select, &ref_names, &hash_table,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&pair2.seq()[2..]), &rank_select, &ref_names, &hash_table,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) ), &rank_select, &ref_names, &hash_table,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) [1..]), &rank_select, &ref_names, &hash_table,k,threshold),
+								alignr::palign(temp_cat_str, &suff_arry, translate(&revcomp(pair2.seq() ) [2..]), &rank_select, &ref_names, &hash_table,k,threshold)];
 		// if bench{
 		// 	println!("Frame2: {:?}",frame2_time.elapsed());
 		// }
@@ -111,17 +103,21 @@ fn main() {
 
 		//let frame1_best_time = Instant::now();
 		//let p1_frame = alignr::best_in_frame_sum(&p1_frame_con);
-		let p1_frame = alignr::best_in_frame_max(&p1_frame_con);
-		// if bench{
-		// 	println!("Frame1Best: {:?}",frame1_best_time.elapsed());
-		// }
+		// let p1_frame = alignr::best_in_frame_max(&p1_frame_con);
+		// // if bench{
+		// // 	println!("Frame1Best: {:?}",frame1_best_time.elapsed());
+		// // }
 
-		//let frame2_best_time = Instant::now();
-		//let p2_frame = alignr::best_in_frame_sum(&p2_frame_con);
-		let p2_frame = alignr::best_in_frame_max(&p2_frame_con);
+		// //let frame2_best_time = Instant::now();
+		// //let p2_frame = alignr::best_in_frame_sum(&p2_frame_con);
+		// let p2_frame = alignr::best_in_frame_max(&p2_frame_con);
 		// if bench{
 		// 	println!("Frame2Best: {:?}",frame2_best_time.elapsed());
 		// }
+		
+		let p1_frame = alignr::merge_frame(&p1_frame_con);
+		let p2_frame = alignr::merge_frame(&p2_frame_con);
+		
 
 		// let best_pair = alignr::best_in_pair(&p1_frame_con, &p2_frame_con, p1_frame, p2_frame);
 		
@@ -167,17 +163,17 @@ fn main() {
 		//println!("{}",pair2.id());
 	} 
 
-	output_file.push_str(&k.to_string());
-	output_file.push_str(&threshold.to_string());
-	output_file.push_str(".count");
-    let f = File::create(output_file).expect("unable to create output file");
-    let mut f = BufWriter::new(f);
+	// output_file.push_str(&k.to_string());
+	// output_file.push_str(&threshold.to_string());
+	// output_file.push_str(".count");
+    // let f = File::create(output_file).expect("unable to create output file");
+    // let mut f = BufWriter::new(f);
 
-	// Add Headers 22506112
+	// // Add Headers 22506112
 	
-	write!(f,"Name\tNumReads\n").expect("unable to write");
+	// write!(f,"Name\tNumReads\n").expect("unable to write");
 
-	for (key, value) in &out {
-        write!(f,"{}\t{}\n", key, value).expect("unable to write");
-    }
+	// for (key, value) in &out {
+    //     write!(f,"{}\t{}\n", key, value).expect("unable to write");
+    // }
 }

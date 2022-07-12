@@ -1,0 +1,8 @@
+k-size: 7
+reference: /home/kyle/Desktop/RefTest/data/ref.fasta
+data: /home/kyle/Desktop/RefTest/data/sample_01_10000_interleaved.fastq
+threshold: 40.0
+
+out_dir: /home/kyle/Desktop/samars/samar_lite/output
+ref: /home/kyle/Desktop/samars/samar_lite/bin/ref-align
+mapping: /home/kyle/Desktop/samars/samar_lite/bin/alignr

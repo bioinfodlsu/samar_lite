@@ -2,6 +2,18 @@ use std::collections::{HashMap,HashSet};
 use std::str;
 use twox_hash::xxh3::hash64;
 
+pub fn merge_frame(frames: &Vec<Vec<(String,f64)>>) -> HashSet<String>{
+	let mut best = HashSet::new();
+
+	for (_i,info) in frames.iter().enumerate(){
+		for j in info.iter(){
+			best.insert(j.0.clone());
+		}
+	}
+
+	best
+}
+
 pub fn best_in_pair(p1: &Vec<Vec<(String,f64)>>, p2: &Vec<Vec<(String,f64)>>, frame1: usize, frame2: usize) -> String{
 	let mut intersection: Vec<(String,f64)> = Vec::new();
 
@@ -149,12 +161,12 @@ fn reduce_alph(seq:String) -> String{
 }
 
 // ToDo fix variable names, Match K to the reference index,argparse for threshold
-pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<u64,(u64,u64)>,kmer:usize, threshold: f64,  red:bool) -> Vec<(String,f64)>{
+pub fn palign(cat_str: &[u8], suff_arry: &[usize], pre_read:String, rs_maybe: &bio::data_structures::rank_select::RankSelect, ref_names: &HashMap<u64,String>, hash_table: &HashMap<u64,(u64,u64)>,kmer:usize, threshold: f64) -> Vec<(String,f64)>{
 	let mut pros: Vec<(String,f64)> = Vec::new();
 	let mut cov_consensus: HashMap<String,f64> = HashMap::new(); 
 	let mut x = 0;
-	let almost_read = if red {reduce_alph(pre_read)} else {pre_read};
-	let read = almost_read.as_bytes();
+	// let almost_read = if red {reduce_alph(pre_read)} else {pre_read};
+	let read = pre_read.as_bytes();
 	let seqlen = read.len();
 	// let align_time = Instant::now();
 	// let kmer_time = Instant::now();

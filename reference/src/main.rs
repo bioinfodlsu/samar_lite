@@ -20,25 +20,25 @@ struct Ref {
     rank_select: RankSelect,
 	ref_names: HashMap<u64,String>,
 	hash_table: HashMap<u64, (u64,u64)>,
-	k: usize,
-	reduced: bool
+	k: usize
+	// reduced: bool
 }
 
-fn reduce_alph(seq:String) -> String{
-	seq.chars().map(|x| match x {
-		'R' => 'K',
-		'E' => 'K',
-		'D' => 'K',
-		'Q' => 'K',
-		'N' => 'K',
-		'L' => 'I',
-		'V' => 'I',
-		'T' => 'S',
-		'A' => 'S',
-		_ => x,
-	})
-	.collect()
-}
+// fn reduce_alph(seq:String) -> String{
+// 	seq.chars().map(|x| match x {
+// 		'R' => 'K',
+// 		'E' => 'K',
+// 		'D' => 'K',
+// 		'Q' => 'K',
+// 		'N' => 'K',
+// 		'L' => 'I',
+// 		'V' => 'I',
+// 		'T' => 'S',
+// 		'A' => 'S',
+// 		_ => x,
+// 	})
+// 	.collect()
+// }
 
 
 fn main() {
@@ -47,17 +47,17 @@ fn main() {
 	*/
 	let mut ref_path = String::from("ref.fasta");
 	let mut k:usize = 5;
-	let mut reduced = false;
+	// let mut reduced = false;
+	let mut output = String::from("ref_index_");
+	output.push_str(&k.to_string());
+	output.push_str(".json");
+
 	{ // this block limits scope of borrows by ap.refer() method
 	let mut ap = ArgumentParser::new();
 	ap.set_description("Reference Creator for Samar-lite");
 	ap.refer(&mut ref_path).add_argument("Reference", Store,"Reference Fasta File");
-	ap.refer(&mut k)
-	.add_argument("kmer", Store,
-	"Kmer for alignment");
-	ap.refer(&mut reduced)
-	.add_option(&["-r", "--reduced"], StoreTrue,
-	"Utilize a reduced alphabet");
+	ap.refer(&mut k).add_argument("kmer", Store,"Kmer for alignment");
+	ap.refer(&mut output).add_argument("output", Store, "Specify output file");
 	ap.parse_args_or_exit();
 	}
 
@@ -67,9 +67,9 @@ fn main() {
 	let mut cat_str = String::new();
 	let mut rank_bitvec: BitVec<u8> = BitVec::new();
 	
-	if reduced{
-		println!("Using Reduced Alph");	
-	}
+	// if reduced{
+	// 	println!("Using Reduced Alph");	
+	// }
 
 	//Creates Concatenated string and Rank Bit Vector and Rank Names Map
 	let mut nb_reads = 0;
@@ -77,12 +77,12 @@ fn main() {
 	for result in reader.records() {
 		let record = result.expect("Error during fasta record parsing");
 		
-		if reduced{
-			cat_str.push_str(&reduce_alph(String::from_utf8_lossy(record.seq()).into_owned()));
-		}
-		else {
-			cat_str.push_str(str::from_utf8(record.seq()).expect("Error during fasta record parsing"));
-		}
+		// if reduced{
+		// 	cat_str.push_str(&reduce_alph(String::from_utf8_lossy(record.seq()).into_owned()));
+		// }
+		// else {
+		cat_str.push_str(str::from_utf8(record.seq()).expect("Error during fasta record parsing"));
+		// }
 		cat_str.push_str("$");
 		
 		for _x in 0..record.seq().len(){
@@ -142,16 +142,11 @@ fn main() {
 		rank_select,
 		ref_names,
 		hash_table,
-		k,
-		reduced
+		k
+		// reduced
 	};
-	
-	let mut file = String::from("ref_index_");
-	file.push_str(&k.to_string());
-	file.push_str(".json");
-	
-	
-	serde_json::to_writer(&File::create(file).unwrap(), &test);
+		
+	serde_json::to_writer(&File::create(output).unwrap(), &test);
 	
 	println!("Done");
 }

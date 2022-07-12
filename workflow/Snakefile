@@ -1,0 +1,32 @@
+reference = config["ref"]
+mapping = config["mapping"]
+
+rule all: 
+    input:
+        "{0}/test{1}_{2}.map".format(config["out_dir"],config["k-size"],config["threshold"])
+
+rule samar_mapping: 
+    input: 
+        ref_index="{0}/test{1}.json".format(config["out_dir"],config["k-size"]),
+        query="{0}".format(config["data"]),
+    params:
+        threshold="{0}".format(config["threshold"]),
+    conda:
+        "env/rust.yaml"
+    output:
+        "{0}/test{1}_{2}.map".format(config["out_dir"],config["k-size"],config["threshold"])
+    shell:
+        "{mapping} {input.ref_index} {input.query} {params.threshold} {output}"
+
+rule reference_index:
+    input: 
+        "{0}".format(config["reference"]),
+    params:
+        k="{0}".format(config["k-size"]),
+    conda:
+        "env/rust.yaml"
+    output:
+        "{0}/test{1}.json".format(config["out_dir"],config["k-size"])
+    shell:
+        "{reference} {input} {params.k} {output}"
+
