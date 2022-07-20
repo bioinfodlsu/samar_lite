@@ -1,8 +1,34 @@
 k-size: 7
 reference: /home/kyle/Desktop/RefTest/data/ref.fasta
-data: /home/kyle/Desktop/RefTest/data/sample_01_10000_interleaved.fastq
 threshold: 40.0
 
-out_dir: /home/kyle/Desktop/samars/samar_lite/output
-ref: /home/kyle/Desktop/samars/samar_lite/bin/ref-align
-mapping: /home/kyle/Desktop/samars/samar_lite/bin/alignr
+reads:
+  sample_1:
+   /media/kyle/6a66ad1a-7b68-4f54-a041-23343884bcee/kyle/Desktop/INTERLEAVED_DATA/sample_01_interleave.fastq
+  sample_2:
+   /media/kyle/6a66ad1a-7b68-4f54-a041-23343884bcee/kyle/Desktop/INTERLEAVED_DATA/sample_02_interleave.fastq
+  sample_3:
+   /media/kyle/6a66ad1a-7b68-4f54-a041-23343884bcee/kyle/Desktop/INTERLEAVED_DATA/sample_03_interleave.fastq
+  sample_4:
+   /media/kyle/6a66ad1a-7b68-4f54-a041-23343884bcee/kyle/Desktop/INTERLEAVED_DATA/sample_04_interleave.fastq
+  sample_5:
+   /media/kyle/6a66ad1a-7b68-4f54-a041-23343884bcee/kyle/Desktop/INTERLEAVED_DATA/sample_05_interleave.fastq
+  sample_6:
+   /media/kyle/6a66ad1a-7b68-4f54-a041-23343884bcee/kyle/Desktop/INTERLEAVED_DATA/sample_06_interleave.fastq
+
+
+out_dir: output
+ref: bin/ref-align
+mapping: bin/alignr
+
+deanalysis : "yes"
+
+factors: [Group] #list of names of the factors/co-variates.
+sample_info: #
+  sample_1 : [control] #list of names of level of the factors, which the sample corresponds to.
+  sample_2 : [control]
+  sample_3 : [control]
+  sample_4 : [treated]
+  sample_5 : [treated]
+  sample_6 : [treated]
+design: Group
