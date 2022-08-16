@@ -1,5 +1,11 @@
-# 1. Installation
+Welcome to SAMAR-lite !
+SAMAR-lite lets you perform quick-and-dirty differential gene expression analysis in organisms without a reference transcriptome sequence.
+For non-model organisms, conventional DE analysis pipelines requires de-novo transcriptome assembly, which requires massive computational resources. 
+This pipeline provides a shortcut in which RNA-seq reads are directly mapped to the reference proteome which would have been otherwise used for annotation and functional inference in the assembly-based approach. 
+It is faster than [SAMAR](https://bitbucket.org/project_samar/samar/), but less accurate.
 
+# 1. Installation
+The read mapping part of SAMAR-lite is written in Rust.
 ## 1.1. Install  Rust 
 ### 1.1.1 Using Conda
 This is probably the easiest way to install Rust. 
