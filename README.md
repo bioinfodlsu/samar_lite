@@ -2,7 +2,7 @@
 
 ## 1.1. Install  Rust 
 ### 1.1.1 Using Conda
-This is probably the most painless way to install Rust. 
+This is probably the easiest way to install Rust. 
 
 ```
 conda create --name rust
