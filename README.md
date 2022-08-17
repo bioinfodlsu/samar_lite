@@ -11,9 +11,9 @@ The read mapping part of SAMAR-lite is written in Rust.
 This is probably the easiest way to install Rust. 
 
 ```
-conda create --name rust
-conda activate rust
-conda install -c conda-forge rust
+$ conda create --name rust
+$ conda activate rust
+$ conda install -c conda-forge rust
 ```
 Test Rust by running:
 ```
@@ -29,7 +29,6 @@ After completing the rust installation, test Rust by running:
 ```
 $ cargo
 ```
-
 
 ## 1.2. Download/clone this repository
 
@@ -77,3 +76,41 @@ $ ./alignr <path-to-reference>.json <path-to-query>.fastq <threshold of coverage
 ```
 A text file in the specified path with be generated using the reference and threshold of coverage. 
 
+# 3. Running Pipeline
+
+## 3.1. Install Snakemake
+Snakemake recommends installation via Conda:
+```
+$ conda install -c conda-forge mamba
+$ mamba create -c conda-forge -c bioconda -n snakemake snakemake
+```
+This creates an isolated enviroment containing the latest Snakemake. To activate it:
+```
+$ conda activate snakemake
+```
+To test snakemake installation 
+```
+$ snakemake --help
+```
+
+## 3.2 Config File 
+Before running the pipeline, a YAML-format config file is needed. The parameters in the YAML config file can be seen below:
+
+| Keyword       |   Possible values         | Default  |  Description  |
+| ------------- |------------------------| ------ |  ------------|
+| reference | path/to/reference/file.fasta  | - | Reference protein database in fasta format |
+| k-size | positive integer value | 7 | Size of the k-mers |
+| threshold | positive float value | 40.0 | Minimum mapping coverage |
+| reads: sample_i | path/to/query/file_i.fastq | - | RNA-seq fastq reads |
+| out_dir | path/to/output/dir | - | Directory where outputs will be stored where, the mappings can be found in the mapping folder, the count data in the counts folder, and the results of differential expression analysis in the DEanalysis folder |
+| deanalysis | yes, no | yes |  If set to "no", the pipeline does not proceed to DE anlaysis and halts after counting. If keyword is not provided, value defaults to "yes" |
+|factor| [factor1, factor2, .. ] | - | Name of factors in the study |
+| sample_info: sample_i: |  [level of factor1, level of factor2, ..] | -| Describes the factor levels which the sample corresponds to |
+
+A template config.yaml is provided in the config folder inside the workflow folder, i.e. ../workflow/config/.
+
+## 3.3 Pipeline Command 
+After constructing a config.yaml file and with the snakemake conda environment you created earlier activated, you can call the pipeline from the top-level directory of SAMAR_lite:
+```
+$ snakemake --configfile <my_config.yaml> --use-conda --cores all 
+```
