@@ -1,5 +1,7 @@
 Welcome to SAMAR-lite !
-SAMAR-lite lets you perform quick-and-dirty differential gene expression analysis in organisms without a reference transcriptome sequence.
+
+SAMAR-lite lets you perform quick-and-dirty differential gene expression analysis in organisms when you don't have a reference transcriptome sequence.
+
 For non-model organisms, conventional DE analysis pipelines requires de-novo transcriptome assembly, which requires massive computational resources. 
 This pipeline provides a shortcut in which RNA-seq reads are directly mapped to the reference proteome which would have been otherwise used for annotation and functional inference in the assembly-based approach. 
 It is faster than [SAMAR](https://bitbucket.org/project_samar/samar/), but less accurate.
