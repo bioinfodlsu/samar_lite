@@ -1,5 +1,5 @@
-reference = config["ref"]
-mapping = config["mapping"]
+reference = srcdir("../bin/ref-align")
+mapping = srcdir("../bin/alignr")
 seq_count = srcdir("scripts/seq_count.py")
 last_deseq2 = srcdir("scripts/last2deseq.R")
 
@@ -72,9 +72,8 @@ rule counting:
     conda:
         "env/counting.yaml"
     shell:
-        "python {seq_count} {input.ref} {input.mapping} {output} True"
+        "python3 {seq_count} {input.ref} {input.mapping} {output} True"
     
-
 rule samar_mapping: 
     input: 
         ref_index="{0}/index/index.json".format(config["out_dir"]),

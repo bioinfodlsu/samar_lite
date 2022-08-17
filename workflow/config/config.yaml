@@ -1,27 +1,18 @@
+reference: /path/to/reference.fasta
 k-size: 7
-reference: /home/kyle/Desktop/RefTest/data/ref.fasta
 threshold: 40.0
 
 reads:
   sample_1:
-   /media/kyle/6a66ad1a-7b68-4f54-a041-23343884bcee/kyle/Desktop/INTERLEAVED_DATA/sample_01_interleave.fastq
-  sample_2:
-   /media/kyle/6a66ad1a-7b68-4f54-a041-23343884bcee/kyle/Desktop/INTERLEAVED_DATA/sample_02_interleave.fastq
-  sample_3:
-   /media/kyle/6a66ad1a-7b68-4f54-a041-23343884bcee/kyle/Desktop/INTERLEAVED_DATA/sample_03_interleave.fastq
-  sample_4:
-   /media/kyle/6a66ad1a-7b68-4f54-a041-23343884bcee/kyle/Desktop/INTERLEAVED_DATA/sample_04_interleave.fastq
-  sample_5:
-   /media/kyle/6a66ad1a-7b68-4f54-a041-23343884bcee/kyle/Desktop/INTERLEAVED_DATA/sample_05_interleave.fastq
-  sample_6:
-   /media/kyle/6a66ad1a-7b68-4f54-a041-23343884bcee/kyle/Desktop/INTERLEAVED_DATA/sample_06_interleave.fastq
+   /path/to/query.fastq
+  # sample_2: 
+  # Additional samples follow the same format
+ 
 
 
-out_dir: output
-ref: bin/ref-align
-mapping: bin/alignr
+out_dir: /path/to/output
 
-deanalysis : "yes"
+deanalysis : "no"
 
 factors: [Group] #list of names of the factors/co-variates.
 sample_info: #
