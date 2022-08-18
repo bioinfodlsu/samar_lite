@@ -78,7 +78,7 @@ $ ./alignr <path-to-reference>.json <path-to-query>.fastq <threshold of coverage
 ```
 A text file in the specified path with be generated using the reference and threshold of coverage. 
 
-# 3. Running Pipeline
+# 3. Snakemake Pipeline
 
 ## 3.1. Install Snakemake
 Snakemake recommends installation via Conda:
@@ -111,7 +111,7 @@ Before running the pipeline, a YAML-format config file is needed. The parameters
 
 A template config.yaml is provided in the config folder inside the workflow folder, i.e. ../workflow/config/.
 
-## 3.3 Pipeline Command 
+## 3.3 Running Pipeline 
 After constructing a config.yaml file and with the snakemake conda environment you created earlier activated, you can call the pipeline from the top-level directory of SAMAR_lite:
 ```
 $ snakemake --configfile <my_config.yaml> --use-conda --cores all 
