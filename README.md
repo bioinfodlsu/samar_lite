@@ -1,4 +1,4 @@
-Welcome to SAMAR-lite !
+# Welcome to SAMAR-lite !
 
 SAMAR-lite lets you perform quick-and-dirty differential gene expression analysis in organisms when you don't have a reference transcriptome sequence.
 
