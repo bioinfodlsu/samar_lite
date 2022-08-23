@@ -1,25 +1,64 @@
-reference: /path/to/reference.fasta
+# Config file for testdata
+# Here you can specify the paths to the input and output, and other additional parameters.
+# Arguments are specified in a key:value format, do NOT change the key names.
+
+#####################
+# Input and output
+#####################
+
+## Reference protein database.
+# It is recommended to provide absolute paths, i.e. beginning with root (/).
+# Else, paths are considered to be relative to SAMAR top-level directory.
+reference: /path/to/reference/proteome
+
+## K-mer size
+# A positive integer value is required as input
 k-size: 7
+
+## Threshold
+# A positive float value is required as input
 threshold: 40.0
 
+## RNA-seq reads
+# It is recommended to provide absolute paths, i.e. beginning with root (/).
+# Else, paths are considered to be relative to SAMAR top-level directory.
 reads:
   sample_1:
-   /path/to/query.fastq
+   /path/to/sample_1.fastq
+  sample_2:
+   /path/to/sample_2.fastq
+  sample_3:
+   /path/to/sample_3.fastq
+  sample_4:
+   /path/to/sample_4.fastq
+  sample_5:
+   /path/to/sample_5.fastq
+  sample_6:
+   /path/to/sample_6.fastq
   # sample_2: 
   # Additional samples follow the same format
  
-
-
+## Output folder
+# It is recommended to provide absolute paths, i.e. beginning with root (/).
+# Else, paths are considered to be relative to SAMAR top-level directory.
 out_dir: /path/to/output
 
+#####################
+# Configuration for differential gene expression analysis with DESeq2
+#####################
+
+## Enable/disable differential expression analysis.
+##Possible values: yes or no.
+##Defaults to "yes" if unspecified, in which case you must specify the "factors", "sample_info", "design" entries below.
 deanalysis : "no"
 
-factors: [Group] #list of names of the factors/co-variates.
-sample_info: #
+#Sample information
+factors: [Treatment] #list of names of the factors/co-variates.
+sample_info: 
   sample_1 : [control] #list of names of level of the factors, which the sample corresponds to.
   sample_2 : [control]
   sample_3 : [control]
   sample_4 : [treated]
   sample_5 : [treated]
   sample_6 : [treated]
-design: Group
+design: Treatment #formula for the model matrix
