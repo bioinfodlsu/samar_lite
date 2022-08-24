@@ -39,7 +39,7 @@ $ git clone https://bitbucket.org/project_samar/samar_lite.git
 $ cd samar_lite
 ```
 
-## 1.3. Compiling the Binaries
+## 1.3. Compiling 
 In the `samar-lite` folder, run the `make` command.
 ```
 $ make
