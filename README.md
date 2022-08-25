@@ -137,6 +137,6 @@ In this example, there are 6 RNA-seq samples, of which 3 are the "control" group
 The paths to the files and information about the experiment design is specified in config_test.yaml. 
 From the top directory of the pipeline and with the snakemake conda environment activated, run:
 ```
-$ snakemake --configfile testdata/config.yaml --use-conda --cores all 
+$ snakemake --configfile testdata/config_test.yaml --use-conda --cores all 
 ```
 Once the run is complete, you can check the output in the folder test_output which is created in the top-level directory of SAMAR-lite.
