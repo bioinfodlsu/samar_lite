@@ -7,80 +7,18 @@ This pipeline provides a shortcut in which RNA-seq reads are directly mapped to 
 It is faster than [SAMAR](https://bitbucket.org/project_samar/samar/), but less accurate.
 
 # 1. Installation
-The read mapping part of SAMAR-lite is written in Rust.
-## 1.1. Install  Rust 
-### 1.1.1 Using Conda
-This is probably the easiest way to install Rust. 
+This pipeline requires the package manager **Conda** and the workflow management system **Snakemake**.
+All other dependencies are handled automatically by Snakemake.
 
+## 1.1. Install Conda 
+Download Miniconda3  installer for Linux from  [here](https://docs.conda.io/en/latest/miniconda.html#linux-installers).
+Installation instructions are [here](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html).
+Once installation is complete, you can test your Miniconda installation by running:
 ```
-$ conda create --name rust
-$ conda activate rust
-$ conda install -c conda-forge rust
-```
-Test Rust by running:
-```
-$ cargo
+$ conda list
 ```
 
-### 1.1.2 As recommended by Rust:
-Or you can install Rust directly:
-```
-$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-After completing the rust installation, test Rust by running:
-```
-$ cargo
-```
-
-## 1.2. Download/clone this repository
-
-```
-$ git clone https://bitbucket.org/project_samar/samar_lite.git
-$ cd samar_lite
-```
-
-## 1.3. Compiling 
-In the `samar-lite` folder, run the `make` command.
-```
-$ make
-```
-This will automatically compile the binaries of the `reference` and `alignr` folders.
-After compilation, the binaries will be placed inside the `bin` folder.
-
-# 2. Running Project
-From the `samar-lite` folder, go to the `bin` folder.
-```
-$ cd bin
-```
-
-## 2.1. Reference Generation
-First the reference will be generated. 
-Note that the input files for the reference section is: 
-- protein reference fasta file
-
-### 2.1.1. Running the Reference Binary 
-To generate the reference, run this command: 
-```
-$ ./ref-align <path-to-reference>.fasta <path-to-output>.json <kmer size>
-```
-A json file in the specified path with be generated using the reference and kmer size. 
-
-## 2.2. Pseudo Alignment Generation
-Next, using the previously generated reference JSON, the Pseudo Alignments will be generated.
-Note that the input files for the pseudo alignment section are: 
-- reference JSON file
-- interleaved DNA fastq query file 
-
-### 2.1.1. Running the Reference Binary 
-To generate the Pseudo Alignments, run this command: 
-```
-$ ./alignr <path-to-reference>.json <path-to-query>.fastq <threshold of coverage> > <path-to-desired-output>.txt
-```
-A text file in the specified path with be generated using the reference and threshold of coverage. 
-
-# 3. Snakemake Pipeline
-
-## 3.1. Install Snakemake
+## 1.2. Install Snakemake
 Snakemake recommends installation via Conda:
 ```
 $ conda install -c conda-forge mamba
@@ -94,14 +32,23 @@ To test snakemake installation
 ```
 $ snakemake --help
 ```
+To deactivate the Snakemake environment: 
+```
+$ conda deactivate
+```
+## 1.3. Download/clone this repository
+```
+$ git clone https://bitbucket.org/project_samar/samar_lite.git
+$ cd samar_lite
+```
 
-## 3.2 Config File 
+# 2. User Guide
  
-### 3.2.1. Input
+### 2.1. Input
 The pipeline requires, at the very least: (1) RNA-seq fastq **interleaved** read, (2) a reference protein database in fasta format, (3) a k-mer size, and (4) a coverage threshold.
 These and other input parameters are specified via a YAML-format config file -- a template config.yaml is provided in the config folder within the workflow folder.
  
-### 3.2.2. Output
+### 2.2. Output
 The output of the pipeline is stored inside the folder specified in the out_dir entry of the config file. 
 Inside it, the mappings can be found in the mappings folder, the count data in the counts folder, and the results of differential expression analysis in the DEanalysis folder. 
  
@@ -111,7 +58,7 @@ In the DEanalysis folder in test_output, you will find the following files:
 - Test_result-Group_treated_vs_control.csv, which contains the table of the results of hypothesis testing for each gene in the reference. 
 - DESeq2_fit.RDS which can be loaded using R, if further analysis is required.
  
-### 3.2.3. Config Parameters
+### 2.3. Config Parameters
 The parameters in the YAML config file can be seen below:
  
 | Keyword       |   Possible values         | Default  |  Description  |
@@ -125,13 +72,13 @@ The parameters in the YAML config file can be seen below:
 |factor| [factor1, factor2, .. ] | - | Name of factors in the study |
 | sample_info: sample_i: |  [level of factor1, level of factor2, ..] | -| Describes the factor levels which the sample corresponds to |
  
-## 3.3 Running Pipeline 
+## 2.4 Running Pipeline 
 After constructing a config.yaml file and with the snakemake conda environment you created earlier activated, you can call the pipeline from the top-level directory of SAMAR_lite:
 ```
 $ snakemake --configfile <workflow/config/config.yaml> --use-conda --cores all 
 ```
  
-### 3.3.1 Example 
+### 2.4.1 Example 
 A toy example is provided in the test_data folder. 
 In this example, there are 6 RNA-seq samples, of which 3 are the "control" group replicates and 3 are the "treated" group replicates. 
 The paths to the files and information about the experiment design is specified in config_test.yaml. 
