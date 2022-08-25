@@ -1,5 +1,3 @@
-reference = srcdir("../bin/ref-align")
-mapping = srcdir("../bin/alignr")
 seq_count = srcdir("scripts/seq_count.py")
 last_deseq2 = srcdir("scripts/last2deseq.R")
 
@@ -78,20 +76,37 @@ rule samar_mapping:
     input: 
         ref_index="{0}/index/index.json".format(config["out_dir"]),
         query=lambda wildcards: config["reads"][wildcards.sample_id],
+        mapping = "alignr/target/release/alignr"
     params:
         threshold="{0}".format(config["threshold"]),
     output:
         "{0}/mapping/{{sample_id}}.map".format(config["out_dir"],config["k-size"],config["threshold"])
     shell:
-        "{mapping} {input.ref_index} {input.query} {params.threshold} {output}"
+        "{input.mapping} {input.ref_index} {input.query} {params.threshold} {output}"
 
 rule reference_index:
     input: 
-        "{0}".format(config["reference"]),
+        ref = "{0}".format(config["reference"]),
+        reference = "reference/target/release/ref-align",
     params:
         k="{0}".format(config["k-size"]),
     output:
         "{0}/index/index.json".format(config["out_dir"])
     shell:
-        "{reference} {input} {params.k} {output}"
+        "{input.reference} {input.ref} {params.k} {output}"
 
+rule samar_compile_index: 
+    output:
+        touch("reference/target/release/ref-align")
+    conda:
+        "env/rust.yaml"
+    shell:
+        "cd reference && cargo build --release"
+
+rule samar_compile_mapping: 
+    output:
+        touch("alignr/target/release/alignr")
+    conda:
+        "env/rust.yaml"
+    shell:
+        "cd alignr && cargo build --release"
