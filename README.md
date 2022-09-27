@@ -45,7 +45,7 @@ $ cd samar_lite
 # 2. User Guide
  
 ### 2.1. Input
-The pipeline requires, at the very least: (1) RNA-seq fastq **interleaved** read, (2) a reference protein database in fasta format, (3) a k-mer size, and (4) a coverage threshold.
+The pipeline requires, at the very least: (1) RNA-seq fastq reads, (2) a reference protein database in fasta format, (3) a k-mer size, and (4) a coverage threshold.
 These and other input parameters are specified via a YAML-format config file -- a template config.yaml is provided in the config folder within the workflow folder.
  
 ### 2.2. Output
