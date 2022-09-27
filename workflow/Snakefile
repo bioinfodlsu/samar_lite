@@ -1,5 +1,6 @@
 seq_count = srcdir("scripts/seq_count.py")
 last_deseq2 = srcdir("scripts/last2deseq.R")
+interleave = srcdir("scripts/fastq-interleave.sh")
 
 if "deanalysis" not in config:
     config["deanalysis"] = "yes"
@@ -71,11 +72,20 @@ rule counting:
         "env/counting.yaml"
     shell:
         "python3 {seq_count} {input.ref} {input.mapping} {output} True"
-    
+
+rule input_interleave: 
+    input:
+    	query1=lambda wildcards: config["reads"][wildcards.sample_id][0],
+        query2=lambda wildcards: config["reads"][wildcards.sample_id][1],
+    output:
+    	pipe("Interleaved_{sample_id}.fastq")
+    shell:
+    	"{interleave} {input.query1} {input.query2} > {output}"
+    	
 rule samar_mapping: 
     input: 
         ref_index="{0}/index/index.json".format(config["out_dir"]),
-        query=lambda wildcards: config["reads"][wildcards.sample_id],
+        query="Interleaved_{sample_id}.fastq",
         mapping = "alignr/target/release/alignr"
     params:
         threshold="{0}".format(config["threshold"]),
@@ -83,6 +93,7 @@ rule samar_mapping:
         "{0}/mapping/{{sample_id}}.map".format(config["out_dir"],config["k-size"],config["threshold"])
     shell:
         "{input.mapping} {input.ref_index} {input.query} {params.threshold} {output}"
+
 
 rule reference_index:
     input: 
