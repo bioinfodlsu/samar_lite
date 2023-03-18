@@ -4,7 +4,7 @@ SAMAR-lite lets you perform quick-and-dirty differential gene expression analysi
 
 For non-model organisms, conventional DE analysis pipelines requires de-novo transcriptome assembly, which requires massive computational resources. 
 This pipeline provides a shortcut in which RNA-seq reads are directly mapped to the reference proteome which would have been otherwise used for annotation and functional inference in the assembly-based approach. 
-It is faster than [SAMAR](https://bitbucket.org/project_samar/samar/), but less accurate.
+It is faster than [SAMAR](https://github.com/bioinfodlsu/samar), but less accurate.
 
 # 1. Installation
 This pipeline requires the package manager **Conda** and the workflow management system **Snakemake**.
@@ -38,7 +38,7 @@ $ conda deactivate
 ```
 ## 1.3. Download/clone this repository
 ```
-$ git clone https://bitbucket.org/project_samar/samar_lite.git
+$ git clone https://github.com/bioinfodlsu/samar_lite.git
 $ cd samar_lite
 ```
 
@@ -87,3 +87,9 @@ From the top directory of the pipeline and with the snakemake conda environment 
 $ snakemake --configfile testdata/config_test.yaml --use-conda --cores all 
 ```
 Once the run is complete, you can check the output in the folder test_output which is created in the top-level directory of SAMAR-lite.
+
+# 3 Publication
+Kyle Christian L. Santiago and Anish M.S. Shrestha: DNA-protein quasi-mapping for rapid differential gene expression analysis in non-model organisms, GIW XXXI/ISCB-Asia V, Dec 12 – 14, 2022, Tainan, Taiwan. To appear in BMC Supplements.
+
+# 4 Contact
+For comments, suggestions, issues, please send an email to anish.shrestha--atmark--dlsu.edu.ph
