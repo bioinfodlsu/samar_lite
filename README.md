@@ -89,7 +89,9 @@ $ snakemake --configfile testdata/config_test.yaml --use-conda --cores all
 Once the run is complete, you can check the output in the folder test_output which is created in the top-level directory of SAMAR-lite.
 
 # 3 Publication
-Kyle Christian L. Santiago and Anish M.S. Shrestha: DNA-protein quasi-mapping for rapid differential gene expression analysis in non-model organisms, GIW XXXI/ISCB-Asia V, Dec 12 – 14, 2022, Tainan, Taiwan. To appear in BMC Supplements. [Preprint](https://www.biorxiv.org/content/10.1101/2022.12.15.520671v1)
+Santiago, K.C.L., Shrestha, A.M.S. DNA-protein quasi-mapping for rapid differential gene expression analysis in non-model organisms. BMC Bioinformatics 25 (Suppl 2), 335 (2024). [Link](https://doi.org/10.1186/s12859-024-05924-1)
+
+This work was presented at [GIW XXXI/ISCB-Asia V, Dec 12 – 14, 2022, Tainan, Taiwan](https://www.iscb.org/giw-iscb-asia2022).
 
 
 # 4 Contact
