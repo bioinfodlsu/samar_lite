@@ -1,19 +1,18 @@
 # Welcome to SAMAR-lite !
 
-SAMAR-lite lets you perform quick-and-dirty differential gene expression analysis in organisms when you don't have a reference transcriptome sequence.
+SAMAR-lite lets you perform ultra rapid differential gene expression analysis in organisms when you don't have a reference transcriptome sequence.
 
-For non-model organisms, conventional DE analysis pipelines requires de-novo transcriptome assembly, which requires massive computational resources. 
-This pipeline provides a shortcut in which RNA-seq reads are directly mapped to the reference proteome which would have been otherwise used for annotation and functional inference in the assembly-based approach. 
-It is faster than [SAMAR](https://github.com/bioinfodlsu/samar), but less accurate.
+For non-model organisms, conventional differential expression analysis pipelines require de-novo transcriptome assembly, which is computationally expensive. 
+SAMAR-lite provides a shortcut in which RNA-seq reads are directly quasi-mapped to a reference proteome database containing protein sequences which would have been otherwise used for annotation and functional inference in the assembly-based approach). 
+The use of quasi-mapping instead of full alignments makes it faster than [SAMAR](https://github.com/bioinfodlsu/samar), but less accurate.
 
 # 1. Installation
 This pipeline requires the package manager **Conda** and the workflow management system **Snakemake**.
 All other dependencies are handled automatically by Snakemake.
 
 ## 1.1. Install Conda 
-Download Miniconda3  installer for Linux from  [here](https://docs.conda.io/en/latest/miniconda.html#linux-installers).
-Installation instructions are [here](https://conda.io/projects/conda/en/latest/user-guide/install/linux.html).
-Once installation is complete, you can test your Miniconda installation by running:
+Conda can be downloaded and installed from [Miniforge](https://github.com/conda-forge/miniforge).
+Once installation is complete, you can test your Conda installation by running:
 ```
 $ conda list
 ```
@@ -21,8 +20,7 @@ $ conda list
 ## 1.2. Install Snakemake
 Snakemake recommends installation via Conda:
 ```
-$ conda install -c conda-forge mamba
-$ mamba create -c conda-forge -c bioconda -n snakemake snakemake
+$ conda create -c conda-forge -c bioconda -n snakemake snakemake
 ```
 This creates an isolated enviroment containing the latest Snakemake. To activate it:
 ```
@@ -32,15 +30,22 @@ To test snakemake installation
 ```
 $ snakemake --help
 ```
-To deactivate the Snakemake environment: 
-```
-$ conda deactivate
-```
 ## 1.3. Download/clone this repository
 ```
 $ git clone https://github.com/bioinfodlsu/samar_lite.git
 $ cd samar_lite
 ```
+## 1.4. Check if SAMAR_lite works
+A toy example is provided in the `test_data` folder. 
+In this example, there are 6 RNA-seq samples, of which 3 are the "control" group replicates and 3 are the "treated" group replicates. 
+The paths to the files and information about the experiment design is specified in config_test.yaml. 
+From the top-level directory of SAMAR_lite, run:
+```
+$ snakemake -p --configfile testdata/config_test.yaml --use-conda --cores all 
+```
+Since this is the first-ever run, it will take a while (5-10 minutes) for Conda to download and install all dependencies.
+Once the run is complete, you can check if some outputs are generated in the newly created `test_output` folder.
+The contents of the output folder are described in the section below.
 
 # 2. User Guide
  
@@ -59,7 +64,8 @@ In the DEanalysis folder in test_output, you will find the following files:
 - DESeq2_fit.RDS which can be loaded using R, if further analysis is required.
  
 ### 2.3. Config Parameters
-The parameters in the YAML config file can be seen below:
+A template configuration file is provided as a YAML file: `workfow/config/config.yaml`.
+The parameters to be provided by the user are:
  
 | Keyword       |   Possible values         | Default  |  Description  |
 | ------------- |------------------------| ------ |  ------------|
@@ -73,20 +79,12 @@ The parameters in the YAML config file can be seen below:
 | sample_info: sample_i: |  [level of factor1, level of factor2, ..] | -| Describes the factor levels which the sample corresponds to |
  
 ## 2.4 Running Pipeline 
-After constructing a config.yaml file and with the snakemake conda environment you created earlier activated, you can call the pipeline from the top-level directory of SAMAR_lite:
+After fully constructing the config.yaml file and with the snakemake conda environment you created earlier activated, you can call the pipeline from the top-level directory of SAMAR_lite:
 ```
-$ snakemake --configfile <workflow/config/config.yaml> --use-conda --cores all 
+$ snakemake -p --configfile workflow/config/config.yaml --use-conda --cores all 
 ```
  
-### 2.4.1 Example 
-A toy example is provided in the test_data folder. 
-In this example, there are 6 RNA-seq samples, of which 3 are the "control" group replicates and 3 are the "treated" group replicates. 
-The paths to the files and information about the experiment design is specified in config_test.yaml. 
-From the top directory of the pipeline and with the snakemake conda environment activated, run:
-```
-$ snakemake --configfile testdata/config_test.yaml --use-conda --cores all 
-```
-Once the run is complete, you can check the output in the folder test_output which is created in the top-level directory of SAMAR-lite.
+
 
 # 3 Publication
 Santiago, K.C.L., Shrestha, A.M.S. DNA-protein quasi-mapping for rapid differential gene expression analysis in non-model organisms. BMC Bioinformatics 25 (Suppl 2), 335 (2024). [Link](https://doi.org/10.1186/s12859-024-05924-1)

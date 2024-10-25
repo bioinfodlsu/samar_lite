@@ -1,92 +1,96 @@
-seq_count = srcdir("scripts/seq_count.py")
-last_deseq2 = srcdir("scripts/last2deseq.R")
-interleave = srcdir("scripts/fastq-interleave.sh")
-
 if "deanalysis" not in config:
     config["deanalysis"] = "yes"
 
 if config["deanalysis"].lower() == "no":
-    all_input = expand("{out_dir}/counts/{sample_id}/{sample_id}.counts",out_dir=[config["out_dir"]],sample_id=config["reads"].keys())
+    all_input = expand("{out_dir}/counts/{sample_id}/{sample_id}.counts",out_dir=[config["out_dir"]],sample_id=config[
+        "reads"].keys())
 
 elif config["deanalysis"].lower() == "yes":
     deseqOutput = ["{0}/DEanalysis/DE_count_summary.txt".format(config["out_dir"]),
                    "{0}/DEanalysis/DESeq2_fit.RDS".format(config["out_dir"])
-                ]
+                   ]
 
-    dynamicFiles = "{0}/DEanalysis/".format(config["out_dir"])+"Test_result-{}_{}_vs_{}.csv"
+    dynamicFiles = "{0}/DEanalysis/".format(config["out_dir"]) + "Test_result-{}_{}_vs_{}.csv"
 
     levels = list(dict(config["sample_info"]).values())
     factorsxlevels = {}
 
-    for n,factor in enumerate(config["factors"]):
+    for n, factor in enumerate(config["factors"]):
         factorsxlevels[factor] = []
         for level in levels:
-            if(level[n] not in factorsxlevels[factor]):
-                   factorsxlevels[factor].append(level[n])
+            if (level[n] not in factorsxlevels[factor]):
+                factorsxlevels[factor].append(level[n])
 
     for factor in config["design"].split(" + "):
-        if("*" not in factor):
+        if ("*" not in factor):
             for x in range(1,len(factorsxlevels[factor])):
                 deseqOutput.append(dynamicFiles.format(factor,factorsxlevels[factor][x],factorsxlevels[factor][0]))
 
-    for term in config["design"].split("+") :
-        if("*" in term):
-            interactionTerm = term.replace(" ", "").split("*")
+    for term in config["design"].split("+"):
+        if ("*" in term):
+            interactionTerm = term.replace(" ","").split("*")
             for order in range(1,len(interactionTerm)):
-                for comb in list(itertools.combinations(interactionTerm, order + 1)):
-                    coeff = [list(map(lambda x: i+x, factorsxlevels[i][1:])) for i in comb]
-                    coeffTests = [ "{}/DEanalysis/Test_result-".format(config["out_dir"]) + '.'.join(i) + ".csv" for i in list(itertools.product(*coeff))]
+                for comb in list(itertools.combinations(interactionTerm,order + 1)):
+                    coeff = [list(map(lambda x: i + x,factorsxlevels[i][1:])) for i in comb]
+                    coeffTests = ["{}/DEanalysis/Test_result-".format(config["out_dir"]) + '.'.join(i) + ".csv" for i in
+                                  list(itertools.product(*coeff))]
                     deseqOutput.extend(coeffTests)
 
     all_input = deseqOutput
 
-    rule deseq: #Rule for performing Differential Expression Analysis
+    rule deseq:  #Rule for performing Differential Expression Analysis
         input:
-            expand("{out_dir}/counts/{sample_id}/{sample_id}.counts",out_dir=[config["out_dir"]],sample_id=config["reads"].keys())
+            expand("{out_dir}/counts/{sample_id}/{sample_id}.counts",out_dir=[config["out_dir"]],sample_id=config[
+                "reads"].keys())
         output:
             deseqOutput,
         params:
+            script=os.path.join(workflow.basedir,"scripts","last2deseq.R"),
             count_dir="{0}/counts".format(config["out_dir"]),
-            outdir = "{0}/DEanalysis".format(config["out_dir"]),
-            sample_info = str(dict(config["sample_info"])).replace("'","\""),
-            design = str(config["design"]),
-            factors = str(config["factors"]).replace("'","\""),
+            outdir="{0}/DEanalysis".format(config["out_dir"]),
+            sample_info=str(dict(config["sample_info"])).replace("'","\""),
+            design=str(config["design"]),
+            factors=str(config["factors"]).replace("'","\"")
         conda:
             "env/r.yaml"
-        shell: #TODO allow gene-isoform mapping input
-            "Rscript {last_deseq2} --in_dir '{params.count_dir}' --factors '{params.factors}'"
+        shell:  #TODO allow gene-isoform mapping input
+            "Rscript {params.script} --in_dir '{params.count_dir}' --factors '{params.factors}'"
             " --design '{params.design}' --sample_info '{params.sample_info}' --out_dir '{params.outdir}'"
 
 
-rule all: 
+rule all:
     input:
         all_input
 
 rule counting:
     input:
-        mapping = "{0}/mapping/{{sample_id}}.map".format(config["out_dir"],config["k-size"],config["threshold"]),
-        ref = "{0}".format(config["reference"])
+        mapping="{0}/mapping/{{sample_id}}.map".format(config["out_dir"],config["k-size"],config["threshold"]),
+        ref="{0}".format(config["reference"])
     output:
         "{0}/counts/{{sample_id}}/{{sample_id}}.counts".format(config["out_dir"])
+    params:
+        script=os.path.join(workflow.basedir,"scripts","seq_count.py")
     conda:
         "env/counting.yaml"
     shell:
-        "python3 {seq_count} {input.ref} {input.mapping} {output} True"
+        "python3 {params.script} {input.ref} {input.mapping} {output} True"
 
-rule input_interleave: 
+rule input_interleave:
     input:
-    	query1=lambda wildcards: config["reads"][wildcards.sample_id][0],
+        query1=lambda wildcards: config["reads"][wildcards.sample_id][0],
         query2=lambda wildcards: config["reads"][wildcards.sample_id][1],
     output:
-    	pipe("Interleaved_{sample_id}.fastq")
+        pipe("Interleaved_{sample_id}.fastq")
+    params:
+        script=os.path.join(workflow.basedir,"scripts","fastq-interleave.sh")
     shell:
-    	"{interleave} {input.query1} {input.query2} > {output}"
-    	
-rule samar_mapping: 
-    input: 
+        "{params.script} {input.query1} {input.query2} > {output}"
+
+rule samar_mapping:
+    input:
         ref_index="{0}/index/index.json".format(config["out_dir"]),
         query="Interleaved_{sample_id}.fastq",
-        mapping = "alignr/target/release/alignr"
+        mapping="alignr/target/release/alignr"
     params:
         threshold="{0}".format(config["threshold"]),
     output:
@@ -96,9 +100,9 @@ rule samar_mapping:
 
 
 rule reference_index:
-    input: 
-        ref = "{0}".format(config["reference"]),
-        reference = "reference/target/release/ref-align",
+    input:
+        ref="{0}".format(config["reference"]),
+        reference="reference/target/release/ref-align",
     params:
         k="{0}".format(config["k-size"]),
     output:
@@ -106,7 +110,7 @@ rule reference_index:
     shell:
         "{input.reference} {input.ref} {params.k} {output}"
 
-rule samar_compile_index: 
+rule samar_compile_index:
     output:
         touch("reference/target/release/ref-align")
     conda:
@@ -114,7 +118,7 @@ rule samar_compile_index:
     shell:
         "cd reference && cargo build --release"
 
-rule samar_compile_mapping: 
+rule samar_compile_mapping:
     output:
         touch("alignr/target/release/alignr")
     conda:
